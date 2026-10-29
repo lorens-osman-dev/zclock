@@ -42,10 +42,10 @@ export default class GclockExtension extends Extension {
             }
         });
 
-        // Put the actor just above the wallpaper group, below normal windows.
+        // Put the actor directly into the background group, below normal windows.
         // Unlike addChrome(), this does not reserve panel space or create an
         // input region. This is the only dependency on Shell's background API.
-        global.window_group.insert_child_above(this._area, Main.layoutManager._backgroundGroup);
+        Main.layoutManager._backgroundGroup.add_child(this._area);
 
         // A Clutter timeline follows this actor's compositor frame clock.
         // Each frame requests a redraw; unlike a one-second timeout, this
