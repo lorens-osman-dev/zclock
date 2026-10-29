@@ -33,6 +33,7 @@ export default class GclockPreferences extends ExtensionPreferences {
                 use24Hour: settings.get_boolean('use-24-hour'),
                 showSeconds: settings.get_boolean('show-seconds'),
                 opacity: settings.get_int('opacity') / 100,
+                flip: settings.get_int('position-x') >= 50,
             });
             cr.restore();
             // GTK owns this context, so unlike St.DrawingArea's context we do

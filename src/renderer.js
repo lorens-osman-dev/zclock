@@ -5,28 +5,36 @@ import {clockState, dialAngle, DESIGN_WIDTH, DESIGN_HEIGHT} from './model.js';
 
 // Draw text by the center of its visible ink, not its font's baseline. This
 // keeps digits visually centered even when font metrics differ across systems.
-function text(cr, value, x, y, size, alpha) {
-    const layout = PangoCairo.create_layout(cr);
-    const font = Pango.FontDescription.from_string('Sans');
+// Add the flip parameter and un-mirror the context before drawing text
+function text(cr, value, x, y, size, alpha, flip = false) {
     // Pango uses its own integer units. Absolute size means reference-canvas
     // pixels, not points affected by the desktop's text DPI setting.
+    const layout = PangoCairo.create_layout(cr);
+    const font = Pango.FontDescription.from_string('Sans');
     font.set_absolute_size(size * Pango.SCALE);
     layout.set_font_description(font);
     layout.set_text(value, -1);
     const [ink] = layout.get_pixel_extents();
     cr.setSourceRGBA(1, 1, 1, alpha);
-    cr.moveTo(x - ink.width / 2 - ink.x, y - ink.height / 2 - ink.y);
+    
+    cr.save();
+    cr.translate(x, y);
+    // Un-flip the text horizontally so it remains readable left-to-right
+    if (flip) cr.scale(-1, 1);
+    cr.moveTo(-ink.width / 2 - ink.x, -ink.height / 2 - ink.y);
     // Fill glyph outlines rather than using Cairo's toy showText API. Desktop
     // subpixel font settings can otherwise produce colored edges when the
     // drawing is transparent and later composited over an arbitrary wallpaper.
     PangoCairo.layout_path(cr, layout);
     cr.fill();
+    cr.restore();
 }
 
 // `current` can be fractional (e.g. 43.250 seconds). The positions change
 // continuously, but numbers remain upright because we move their centers
 // along the circle rather than rotating the entire Cairo coordinate system.
-function ring(cr, current, radius, labelRadius, opacity) {
+// Add the flip parameter and pass it down to text()
+function ring(cr, current, radius, labelRadius, opacity, flip = false) {
     // A center just beyond the left edge gives the intentionally cropped,
     // off-center instrument-dial appearance from the reference.
     const cx = -3;
@@ -51,11 +59,10 @@ function ring(cr, current, radius, labelRadius, opacity) {
             // Label every fifth mark and pad zero so all labels are two digits.
             text(cr, String(value).padStart(2, '0'),
                 cx + labelRadius * cosine, cy + labelRadius * sine,
-                27, opacity * 0.53 * fade);
+                27, opacity * 0.53 * fade, flip);
         }
     }
 }
-
 // Append a pill-shaped path without painting it. Sharing this geometry between
 // clipping and the border guarantees the empty interior matches the outline.
 function capsule(cr, x, y, width, height) {
@@ -68,30 +75,33 @@ function capsule(cr, x, y, width, height) {
 
 // No GTK/Shell dependencies: the desktop widget, preferences and offscreen
 // tests all use this exact drawing function. The caller owns the Cairo context.
+// Add the flip option, apply the mirror transform, and pass it to elements
 export function drawClock(cr, width, height, date, options = {}) {
-    const {use24Hour = false, showSeconds = true, opacity = 1} = options;
+    const {use24Hour = false, showSeconds = true, opacity = 1, flip = true} = options;
     const state = clockState(date, use24Hour);
     // Save/restore prevents our transforms and clips from affecting the caller.
     cr.save();
     cr.scale(width / DESIGN_WIDTH, height / DESIGN_HEIGHT);
+
+    // Mirror the entire drawing horizontally if positioned on the right
+    if (flip) {
+        cr.translate(DESIGN_WIDTH, 0);
+        cr.scale(-1, 1);
+    }
+
     cr.rectangle(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
     cr.clip();
 
     // Draw the seconds dial globally so it is visible underneath the capsule.
     if (showSeconds)
-        ring(cr, state.secondValue, 352, 308, opacity);
+        ring(cr, state.secondValue, 352, 308, opacity, flip);
 
-    // Exclude the capsule INTERIOR while drawing the rotating minutes ring. The
-    // even-odd rule creates a hole from the nested rectangle and pill paths.
-    // This leaves the minute text legible without adding a background color.
-    // Importantly, we neither fill the hole nor CLEAR existing pixels: both
-    // would change whatever the caller/wallpaper already has behind it.
     cr.save();
     cr.rectangle(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
     capsule(cr, 175, 385, 190, 90);
     cr.setFillRule(Cairo.FillRule.EVEN_ODD);
     cr.clip();
-    ring(cr, state.minuteValue, 270, 226, opacity);
+    ring(cr, state.minuteValue, 270, 226, opacity, flip);
     cr.restore();
 
     // Only stroke the outline: there is deliberately NO fill/color behind
@@ -100,8 +110,8 @@ export function drawClock(cr, width, height, date, options = {}) {
     cr.setSourceRGBA(1, 1, 1, 0.10 * opacity);
     cr.setLineWidth(1.8);
     cr.stroke();
-    // Draw the digital readout last, above the dials and capsule outline.
-    text(cr, state.hour, 80, 430, 116, opacity);
-    text(cr, state.minute, 229, 430, 48, opacity);
+      // Draw the digital readout last, above the dials and capsule outline.
+    text(cr, state.hour, 80, 430, 116, opacity, flip);
+    text(cr, state.minute, 229, 430, 48, opacity, flip);
     cr.restore();
 }
