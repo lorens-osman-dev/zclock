@@ -1,0 +1,8 @@
+{
+  "uuid": "gclock@lorens",
+  "name": "gclock",
+  "description": "A quiet desktop clock with rotating minute and second dials, inspired by offset instrument gauges. Transparent, click-through, and always behind your windows.",
+  "shell-version": ["50"],
+  "settings-schema": "org.gnome.shell.extensions.gclock",
+  "version": 1
+}
