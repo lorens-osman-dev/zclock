@@ -10,6 +10,28 @@ test('clock reads local time and maps midnight to twelve', () => {
     assert.equal(state.secondValue, 30);
 });
 
+// Subsecond input must reach BOTH dials. More redraws alone cannot make
+// movement smooth if the model keeps rounding the time to whole seconds.
+test('dial positions include milliseconds without changing digital minute text', () => {
+    const state = clockState(new Date(2026, 0, 1, 11, 7, 30, 250));
+    assert.equal(state.secondValue, 30.25);
+    assert.equal(state.minuteValue, 7 + 30.25 / 60);
+    assert.equal(state.minute, '07');
+});
+
+// The angle may wrap by one whole revolution at :00, but its position on
+// screen must move a tiny distance forward, never jump or rotate backwards.
+test('seconds sweep continuously through the minute rollover', () => {
+    const before = clockState(new Date(2026, 0, 1, 11, 59, 59, 999));
+    const after = clockState(new Date(2026, 0, 1, 12, 0, 0, 0));
+    const a = dialAngle(0, before.secondValue);
+    const b = dialAngle(0, after.secondValue);
+    assert.ok(before.secondValue > 59.99);
+    assert.ok(Math.hypot(Math.cos(b) - Math.cos(a), Math.sin(b) - Math.sin(a)) < 0.001);
+    assert.equal(after.hour, '12');
+    assert.equal(after.minute, '00');
+});
+
 test('24-hour time, noon and last second are correct', () => {
     assert.equal(clockState(new Date(2026, 0, 1, 0), true).hour, '00');
     assert.equal(clockState(new Date(2026, 0, 1, 12)).hour, '12');

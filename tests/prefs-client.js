@@ -1,6 +1,7 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Gtk from 'gi://Gtk';
 
 Gio.resources_register(Gio.Resource.load('/usr/share/gnome-shell/org.gnome.Shell.Extensions.src.gresource'));
 const root = GLib.getenv('GCLOCK_SOURCE');
@@ -15,10 +16,28 @@ app.connect('activate', () => {
     const window = new Adw.PreferencesWindow({application: app});
     try {
         const preferences = new Preferences(metadata);
-        preferences.fillPreferencesWindow(window);
+        // Instrument the real GTK draw callback without replacing the renderer
+        // or simulating frames. Restore the prototype immediately after setup.
+        // A stepped one-second preview cannot produce this many actual paints.
+        let paints = 0;
+        const originalSetDraw = Gtk.DrawingArea.prototype.set_draw_func;
+        Gtk.DrawingArea.prototype.set_draw_func = function (callback) {
+            originalSetDraw.call(this, (...args) => {
+                paints++;
+                callback(...args);
+            });
+        };
+        try {
+            preferences.fillPreferencesWindow(window);
+        } finally {
+            Gtk.DrawingArea.prototype.set_draw_func = originalSetDraw;
+        }
         window.present();
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             try {
+                if (paints < 8)
+                    throw new Error(`Preview did not animate continuously: ${paints} paints in one second`);
+                print(`PASS: smooth GTK preview (${paints} actual paints in one second)`);
                 const widgets = [];
                 const visit = widget => {
                     widgets.push(widget);

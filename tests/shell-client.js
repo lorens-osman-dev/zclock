@@ -37,6 +37,15 @@ const initial = evaluate(`(() => { const a=${actor}; const c=global.window_group
 expect(initial.height === 740, 'configured clock size is applied');
 expect(initial.reactive === false, 'clock is click-through');
 expect(initial.aboveWallpaper, 'clock is above wallpaper in the window layer');
+
+// Count REAL drawing callbacks, rather than just checking that a timer exists.
+// At frame cadence there should be many paints inside a fraction of a second;
+// the previous one-second scheduler cannot pass this assertion.
+evaluate(`globalThis.gclockPaints = 0; globalThis.gclockPaintId = ${actor}.connect('repaint', () => globalThis.gclockPaints++); true`);
+GLib.usleep(650_000);
+const paints = evaluate('globalThis.gclockPaints');
+expect(paints >= 8, `continuous frame-driven repainting (${paints} paints in 650 ms)`);
+evaluate(`${actor}.disconnect(globalThis.gclockPaintId); true`);
 const screenshot = GLib.getenv('GCLOCK_TEST_ROOT') + '/desktop.png';
 const [captured] = Gio.DBus.session.call_sync('org.gnome.Shell', '/org/gnome/Shell/Screenshot',
     'org.gnome.Shell.Screenshot', 'Screenshot',
@@ -60,18 +69,30 @@ expect(changed.x > initial.x && changed.y > initial.y, 'live placement settings 
 evaluate('Main.overview.show(); true');
 waitFor(() => evaluate(`${actor}.visible`) === false, 'overview visibility');
 expect(true, 'clock hides in overview');
+// Visibility is not enough: the frame driver must stop too, otherwise a
+// hidden clock would still spend CPU scheduling redraws every display frame.
+expect(evaluate(`Main.extensionManager.lookup('gclock@lorens').stateObj._timeline.is_playing()`) === false,
+    'animation stops while hidden in overview');
 evaluate('Main.overview.hide(); true');
 waitFor(() => evaluate(`${actor}.visible`) === true, 'restore desktop');
 expect(true, 'clock returns after overview');
 
+// Keep a reference only in the test so we can prove disable stops the native
+// timeline itself, rather than merely removing the actor from the scene.
+evaluate(`globalThis.gclockOldTimeline = Main.extensionManager.lookup('gclock@lorens').stateObj._timeline; true`);
 call('org.gnome.Shell.Extensions', 'DisableExtension', uuid);
 waitFor(() => info().state.deep_unpack() === 2, 'disabled');
 expect(evaluate(`Boolean(${actor})`) === false, 'disable removes the desktop actor');
+expect(evaluate('globalThis.gclockOldTimeline.is_playing()') === false,
+    'disable stops the old animation timeline');
+expect(evaluate('globalThis.gclockOldTimeline.get_actor() === null'),
+    'disable releases the timeline actor reference');
+evaluate('delete globalThis.gclockOldTimeline; true');
 call('org.gnome.Shell.Extensions', 'EnableExtension', uuid);
 waitFor(() => info().state.deep_unpack() === 1 && evaluate(`Boolean(${actor})`), 'reenabled');
 expect(evaluate(`global.window_group.get_children().filter(a => a.name === 'gclock-desktop-clock').length`) === 1,
     'reenabling produces exactly one actor');
-// Leave enough time for at least two real repaint ticks, then check Shell state.
+// Let the replacement timeline run across multiple cycles, then check Shell state.
 GLib.usleep(2_500_000);
-expect(info().state.deep_unpack() === 1, 'timer-driven Cairo repaints keep extension healthy');
+expect(info().state.deep_unpack() === 1, 'frame-driven Cairo repaints keep extension healthy');
 print('All isolated GNOME Shell integration checks passed.');

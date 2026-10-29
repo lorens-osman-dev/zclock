@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Shared contract for the Shell actor and the separate preferences process.
+     Stable key names/path preserve user settings across extension upgrades.
+     Ranges validate values even when set outside our preferences window. -->
 <schemalist>
   <schema id="org.gnome.shell.extensions.gclock" path="/org/gnome/shell/extensions/gclock/">
+    <!-- Logical pixels scale with the desktop; the model clamps to work area. -->
     <key name="height" type="i"><default>740</default><range min="240" max="1600"/><summary>Widget height in logical pixels</summary></key>
+    <!-- Percentages of free space: 100 aligns the far edge without clipping. -->
     <key name="position-x" type="i"><default>0</default><range min="0" max="100"/><summary>Horizontal placement, left to right</summary></key>
     <key name="position-y" type="i"><default>50</default><range min="0" max="100"/><summary>Vertical placement, top to bottom</summary></key>
+    <!-- -1 follows primary; unavailable explicit indices fall back to primary. -->
     <key name="monitor" type="i"><default>-1</default><range min="-1" max="32"/><summary>Monitor index, or -1 for primary</summary></key>
+    <!-- Opacity affects strokes/text, not a background fill: the capsule is hollow. -->
     <key name="opacity" type="i"><default>100</default><range min="15" max="100"/><summary>Clock opacity in percent</summary></key>
     <key name="use-24-hour" type="b"><default>false</default><summary>Use a 24-hour hour display</summary></key>
     <key name="show-seconds" type="b"><default>true</default><summary>Show the outer seconds dial</summary></key>

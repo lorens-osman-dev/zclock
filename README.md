@@ -1,7 +1,7 @@
 # gclock
 
 A transparent desktop clock for **GNOME Shell 50**, inspired by the supplied
-`Group@2x.jpg`: a large hour, a dark outlined minute capsule, and two offset,
+`Group@2x.jpg`: a large hour, a hollow outlined minute capsule, and two offset,
 rotating instrument-style dials. The inner scale is minutes; the outer scale is
 seconds. The currently selected value points right toward the capsule. Labels
 remain upright while the scales rotate.
@@ -15,8 +15,10 @@ remain upright while the scales rotate.
 - Automatically constrained to the chosen display's work area.
 - Live GTK4/libadwaita preferences with preview and reset.
 - Hidden during Activities by default, removed on lock/disable.
-- One update per second. Uses local system time and observes clock/timezone changes
-  on the next update. Minutes advance with seconds; seconds step once per second.
+- Smooth frame-synced seconds and minute dials, using millisecond-precision local
+  time. Animation pauses while hidden or unmapped and resynchronizes on return.
+- A fully transparent minute capsule interior: only its outline and digits are
+  painted, so wallpaper or other content underneath shows through unchanged.
 
 The widget does not set your wallpaper. A plain dark wallpaper looks closest to
 the reference. The reference's phone battery indicator is not part of this clock.
@@ -71,8 +73,10 @@ npm run pack                   # create and validate installable ZIP in dist/
 The smoke test starts a **separate compositor and private session bus** with its
 own data, config and cache directories under `$TMPDIR`. It verifies loading,
 placement changes, click-through state, desktop layering, overview hiding,
-disable/re-enable, and timed repaints. It also opens the real preferences inside
-that compositor and exercises switch/spin bindings and reset. A compositor
+disable/re-enable, real subsecond repaint counts, and stopping/releasing the
+animation driver. It also opens the real preferences inside
+that compositor, counts actual preview draws, and exercises switch/spin bindings
+and reset. A compositor
 screenshot and logs are retained in the printed artifact directory.
 
 The test-only companion enables Shell evaluation **only in that isolated bus**;
@@ -88,6 +92,29 @@ inside Hermes). This is a render fixture, not a live screenshot.
 Only GNOME Shell 50 is currently declared supported and integration-tested.
 Shell's private background-group API is deliberately confined to `extension.js`.
 No drag gestures are installed: the widget never intercepts desktop input.
+
+## How the animation and transparency work
+
+The source includes explanatory comments about the mathematics, drawing steps,
+settings bindings, and resource ownership. Start with `src/model.js`, then
+`src/renderer.js`, and finally `extension.js` to follow data from time to pixels.
+
+1. **Fractional local time:** `clockState()` adds milliseconds to seconds and
+   carries that fraction into minutes. Digital labels still change only at the
+   appropriate real clock boundaries.
+2. **Frame scheduling:** a Clutter timeline requests repaints from the actor's
+   compositor frame clock. GTK uses its own tick callback for the preferences
+   preview. Neither driver invents time or counts frames to advance the dial;
+   each draw samples `Date`, preventing accumulated timer drift.
+3. **Visibility and cleanup:** the desktop timeline stops whenever the clock is
+   hidden/unmapped, and disable stops it, disconnects signals and releases its
+   actor reference before destroying the actor.
+4. **No minute fill:** an even-odd clip excludes the capsule interior while the
+   dials are drawn. The clip is then restored, and only the outline and digital
+   readout are painted. There is no dark fill or destructive CLEAR operation,
+   including when drawing over an existing preview backdrop.
+5. **Rollover:** dial angles wrap by a full revolution, whose sine/cosine
+   positions are identical, so crossing 59.999 → 00.000 remains continuous.
 
 ## Layout
 

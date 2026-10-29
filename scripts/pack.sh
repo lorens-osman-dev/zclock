@@ -3,8 +3,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 glib-compile-schemas --strict --dry-run schemas
 mkdir -p dist
+# src/ is not a standard extension entry point, so explicitly include it.
+# Tests (including the unsafe isolated test driver) must never be packaged.
 gnome-extensions pack --force --out-dir=dist \
     --extra-source=src --extra-source=LICENSE --extra-source=README.md .
+# Read back the ZIP: successful command execution alone does not prove that
+# every runtime dependency made it into the installable artifact.
 python3 - <<'PY'
 import json, zipfile
 from pathlib import Path
