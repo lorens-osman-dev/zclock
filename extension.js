@@ -4,6 +4,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import {widgetBounds} from './src/model.js';
 import {drawClock} from './src/renderer.js';
+import {Logger} from './src/logger.js';
 
 // This class owns Shell-specific resources only: the desktop actor, animation
 // driver and signal connections. Time math and artwork live in separate files
@@ -71,6 +72,8 @@ export default class GclockExtension extends Extension {
         // permits drawing. Stop animating if Shell unmaps the entire desktop.
         this._connect(this._area, 'notify::mapped', () => this._syncAnimation());
         this._update();
+
+        Logger.info('Gclock enabled , Hi')
     }
 
     // Remember each connection to a long-lived Shell/settings object. Leaving

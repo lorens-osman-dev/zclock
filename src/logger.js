@@ -1,0 +1,67 @@
+/**
+ * core/logger.js — Colorized Logger
+ *
+ * Responsibility:
+ * - Provide consistent, grep-friendly logging with ANSI colors
+ * - Format stack traces so `journalctl | grep Azkar` catches every line
+ *
+ * Does NOT:
+ * - Access any GNOME APIs
+ * - Hold any state
+ */
+
+// ─── Extension Identification ───
+export const EXTENSION_NAME = 'gclock';
+
+// ─── ANSI Color Constants ────────────────────────────────────────────────────
+
+const CYAN = '\x1b[36m';
+const RED = '\x1b[31m';
+const YELLOW = '\x1b[33m';
+const RESET = '\x1b[0m';
+
+// Dynamically inject the EXTENSION_NAME to ensure terminal grep filters catch standard logs
+const TAG = `${CYAN}[${EXTENSION_NAME}]${RESET}`;
+const ETAG = `${RED}[${EXTENSION_NAME} ERROR]${RESET}`;
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
+export const Logger = {
+  /**
+   * Log an informational message.
+   * Visible in: journalctl -f -o cat /usr/bin/gnome-shell | grep Azkar
+   * @param {string} msg
+   * @returns {void}
+   */
+  info(msg) {
+    print(`${TAG} ${msg}`);
+  },
+
+  /**
+   * Log an error with a full stack trace.
+   * Every line is prefixed with [Azkar] so grep keeps it.
+   * @param {string} context
+   * @param {unknown} [error]
+   * @returns {void}
+   */
+  error(context, error) {
+    let output = `${ETAG} ${context}`;
+
+    if (error) {
+      // JSDoc-typed shape for what we expect to read off an Error-like object
+      /** @type {{ stack?: string, message?: string }} */
+      const err = /** @type {any} */ (error);
+      const lines = err.stack
+        ? err.stack.split('\n').filter(l => l.trim() !== '')
+        : [`${err.message ?? error}`];
+
+      for (const line of lines) {
+        // Dynamically inject the EXTENSION_NAME into stack traces to prevent the Make target's grep
+        // from aggressively filtering out critical multi-line error details.
+        output += `\n${YELLOW}[${EXTENSION_NAME}]  ↳ ${line.trim()}${RESET}`;
+      }
+    }
+
+    printerr(output);
+  },
+};

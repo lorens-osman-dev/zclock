@@ -2,5 +2,11 @@
   "name": "gclock",
   "private": true,
   "type": "module",
-  "scripts": {"test": "node --test tests/*.test.js", "check": "bash scripts/check.sh", "pack": "bash scripts/pack.sh"}
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "bash scripts/check.sh",
+    "pack": "bash scripts/pack.sh",
+    "install": "bash scripts/install.sh",
+    "dev": "npm run install && bash scripts/dev.sh"
+  }
 }
