@@ -77,7 +77,11 @@ export function drawClock(cr, width, height, date, options = {}) {
     cr.rectangle(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
     cr.clip();
 
-    // Exclude the capsule INTERIOR while drawing the rotating rings. The
+    // Draw the seconds dial globally so it is visible underneath the capsule.
+    if (showSeconds)
+        ring(cr, state.secondValue, 352, 308, opacity);
+
+    // Exclude the capsule INTERIOR while drawing the rotating minutes ring. The
     // even-odd rule creates a hole from the nested rectangle and pill paths.
     // This leaves the minute text legible without adding a background color.
     // Importantly, we neither fill the hole nor CLEAR existing pixels: both
@@ -87,8 +91,6 @@ export function drawClock(cr, width, height, date, options = {}) {
     capsule(cr, 175, 385, 190, 90);
     cr.setFillRule(Cairo.FillRule.EVEN_ODD);
     cr.clip();
-    if (showSeconds)
-        ring(cr, state.secondValue, 352, 308, opacity);
     ring(cr, state.minuteValue, 270, 226, opacity);
     cr.restore();
 
