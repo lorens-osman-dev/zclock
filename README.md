@@ -25,21 +25,9 @@ To install the latest version of the extension head to the Official GNOME Extens
 
 ### Install directly from GitHub
 
-This downloads the latest `main` source, packages it, and installs the extension.
-It requires `curl`, `tar`, and `gnome-extensions`.
 
 ```sh
-set -euo pipefail
-tmpdir="$(mktemp -d)"
-curl -fL https://github.com/lorens-osman-dev/zclock/archive/refs/heads/main.tar.gz |
-  tar -xz --strip-components=1 -C "$tmpdir"
-(
-  cd "$tmpdir"
-  gnome-extensions pack --force --out-dir="$tmpdir" \
-    --extra-source=src --extra-source=LICENSE --extra-source=README.md .
-)
-gnome-extensions install --force "$tmpdir/zclock@lorens.shell-extension.zip"
-rm -rf "$tmpdir"
+bash <(curl -fsSL https://raw.githubusercontent.com/lorens-osman-dev/zclock/main/scripts/downloadAndInstall.sh)
 ```
 
 On Wayland, log out and back in after installing, then enable and configure it:
