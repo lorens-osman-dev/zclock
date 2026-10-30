@@ -21,5 +21,10 @@
       <default>'Sans'</default>
       <summary>Font family name</summary>
     </key>
+    <!-- show-on-all-monitors -->
+    <key name="show-on-all-monitors" type="b">
+      <default>true</default>
+      <summary>Show on all monitors</summary>
+    </key>
   </schema>
 </schemalist>

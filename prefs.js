@@ -81,6 +81,14 @@ export default class GclockPreferences extends ExtensionPreferences {
         this._spin(placement, settings, 'position-x', 'Horizontal position', '0 = left · 50 = center · 100 = right', 0, 100, 1);
         this._spin(placement, settings, 'position-y', 'Vertical position', '0 = top · 50 = center · 100 = bottom', 0, 100, 1);
         this._spin(placement, settings, 'monitor', 'Display', '−1 = primary display · 0 = first · 1 = second', -1, 32, 1);
+
+        const allMonitorsRow = new Adw.SwitchRow({
+            title: 'Show on all displays',
+            subtitle: 'Display the clock on every connected screen'
+        });
+        settings.bind('show-on-all-monitors', allMonitorsRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        placement.add(allMonitorsRow);
+
         const reset = new Gtk.Button({label: 'Reset to defaults', halign: Gtk.Align.END, margin_top: 12});
         reset.connect('clicked', () => {
             // Reset the schema's values, not hardcoded UI defaults, so future
