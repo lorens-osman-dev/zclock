@@ -3,7 +3,7 @@
      Stable key names/path preserve user settings across extension upgrades.
      Ranges validate values even when set outside our preferences window. -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.gclock" path="/org/gnome/shell/extensions/gclock/">
+  <schema id="org.gnome.shell.extensions.zclock" path="/org/gnome/shell/extensions/zclock/">
     <!-- Logical pixels scale with the desktop; the model clamps to work area. -->
     <key name="height" type="i"><default>500</default><range min="240" max="1600"/><summary>Widget height in logical pixels</summary></key>
     <!-- Percentages of free space: 100 aligns the far edge without clipping. -->

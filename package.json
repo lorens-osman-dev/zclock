@@ -1,5 +1,5 @@
 {
-  "name": "gclock",
+  "name": "zclock",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,7 +1,7 @@
 #!/bin/bash
 printf '\033[97;44m Dev mode : nested Gnome session ✓✓ \033[0m\n\n'
 
-UUID="gclock@lorens"
+UUID="zclock@lorens"
 
 dbus-run-session -- bash -c '
   gnome-shell --devkit --wayland &
@@ -18,4 +18,4 @@ dbus-run-session -- bash -c '
 
   gnome-extensions enable '"$UUID"' && echo ">>> $UUID enabled in nested session"
   wait $shell_pid
-' 2>&1 | grep --line-buffered "gclock\|>>>"
+' 2>&1 | grep --line-buffered "zclock\|>>>"

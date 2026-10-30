@@ -9,11 +9,11 @@ const root = GLib.getenv('GCLOCK_SOURCE');
 const {default: Preferences} = await import(`file://${root}/prefs.js`);
 const [, bytes] = GLib.file_get_contents(`${root}/metadata.json`);
 const metadata = JSON.parse(new TextDecoder().decode(bytes));
-const staged = `${GLib.getenv('XDG_DATA_HOME')}/gnome-shell/extensions/gclock@lorens`;
+const staged = `${GLib.getenv('XDG_DATA_HOME')}/gnome-shell/extensions/zclock@lorens`;
 metadata.dir = Gio.File.new_for_path(staged);
 metadata.path = staged;
 let failure = null;
-const app = new Adw.Application({application_id: 'local.gclock.PreferencesTest', flags: Gio.ApplicationFlags.NON_UNIQUE});
+const app = new Adw.Application({application_id: 'local.zclock.PreferencesTest', flags: Gio.ApplicationFlags.NON_UNIQUE});
 app.connect('activate', () => {
     const window = new Adw.PreferencesWindow({application: app});
     try {

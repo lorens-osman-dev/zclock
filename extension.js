@@ -8,7 +8,7 @@ import {drawClock} from './src/renderer.js';
 // This class owns Shell-specific resources only: the desktop actor, animation
 // driver and signal connections. Time math and artwork live in separate files
 // so they can also run outside Shell in the automated tests and GTK preview.
-export default class GclockExtension extends Extension {
+export default class ZclockExtension extends Extension {
     enable() {
         // Every enable gets fresh state. Shell can disable/re-enable extensions
         // when locking, changing sessions or applying settings in Extensions.
@@ -56,7 +56,7 @@ export default class GclockExtension extends Extension {
         // 1. Create missing clock instances for the required monitors
         while (this._clocks.length < activeIndices.length) {
             const area = new St.DrawingArea({
-                name: 'gclock-desktop-clock',
+                name: 'zclock-desktop-clock',
                 // The clock is decoration, not a window: let pointer events reach
                 // desktop icons/wallpaper and never claim keyboard focus.
                 reactive: false,

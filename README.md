@@ -1,4 +1,4 @@
-# gclock
+# zclock
 
 A transparent desktop clock for **GNOME Shell 50**, inspired by the supplied
 `Group@2x.jpg`: a large hour, a hollow outlined minute capsule, and two offset,
@@ -36,15 +36,15 @@ bash scripts/install.sh
 Or install the prebuilt ZIP:
 
 ```sh
-gnome-extensions install --force dist/gclock@lorens.shell-extension.zip
+gnome-extensions install --force dist/zclock@lorens.shell-extension.zip
 ```
 
 On Wayland, **log out and log back in** after a first installation or code update,
 then enable and configure it:
 
 ```sh
-gnome-extensions enable gclock@lorens
-gnome-extensions prefs gclock@lorens
+gnome-extensions enable zclock@lorens
+gnome-extensions prefs zclock@lorens
 ```
 
 Default placement: left side, vertically centered, height 740 logical pixels.
@@ -55,8 +55,8 @@ Disconnected/invalid monitor selections fall back to the primary display.
 To remove:
 
 ```sh
-gnome-extensions disable gclock@lorens
-gnome-extensions uninstall gclock@lorens
+gnome-extensions disable zclock@lorens
+gnome-extensions uninstall zclock@lorens
 ```
 
 ## Development and verification

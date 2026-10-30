@@ -11,7 +11,7 @@
  */
 
 // ─── Extension Identification ───
-export const EXTENSION_NAME = 'gclock';
+export const EXTENSION_NAME = 'zclock';
 
 // ─── ANSI Color Constants ────────────────────────────────────────────────────
 

@@ -8,16 +8,16 @@ import {drawClock} from './src/renderer.js';
 // Preferences run in a separate GTK process, NOT inside GNOME Shell. Sharing
 // only the renderer/model lets us preview the clock without importing Shell's
 // St/Clutter objects, which cannot be used in this process.
-export default class GclockPreferences extends ExtensionPreferences {
+export default class ZclockPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         // This is the same GSettings schema the desktop actor reads. Bindings
         // update it immediately; there is intentionally no Apply/Save button.
         const settings = this.getSettings();
         window.set_default_size(640, 820);
-        const page = new Adw.PreferencesPage({title: 'Gclock', icon_name: 'preferences-system-time-symbolic'});
+        const page = new Adw.PreferencesPage({title: 'Zclock', icon_name: 'preferences-system-time-symbolic'});
         window.add(page);
 
-        const previewGroup = new Adw.PreferencesGroup({title: 'Gclock', description: ''});
+        const previewGroup = new Adw.PreferencesGroup({title: 'Zclock', description: ''});
         const preview = new Gtk.DrawingArea({content_height: 250, hexpand: true});
         preview.set_draw_func((_area, cr, width, height) => {
             // This dark color is the PREVIEW backdrop, like a sample wallpaper,
