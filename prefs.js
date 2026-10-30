@@ -29,7 +29,16 @@ export default class ZclockPreferences extends ExtensionPreferences {
             // Fit the reference aspect ratio to the available preview height
             // and center it horizontally instead of stretching the artwork.
             const clockWidth = height * 640 / 860;
-            cr.translate((width - clockWidth) / 2, 0);
+            const flip = settings.get_int('position-x') >= 50;
+            
+            // Translate the drawing context based on the flip setting
+            if (flip) {
+                // When flipped to the right side, translate to the far right edge
+                cr.translate(width - clockWidth, 0);
+            } else {
+                // When on the left side, translate to 0 (the far left edge)
+                cr.translate(0, 0); 
+            }
             drawClock(cr, clockWidth, height, new Date(), {
                 use24Hour: settings.get_boolean('use-24-hour'),
                 showSeconds: settings.get_boolean('show-seconds'),
