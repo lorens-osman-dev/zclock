@@ -7,6 +7,7 @@
     "check": "bash scripts/check.sh",
     "pack": "bash scripts/pack.sh",
     "install": "bash scripts/install.sh",
-    "dev": "npm run install && bash scripts/dev.sh"
+    "uninstall": "bash scripts/uninstall.sh",
+    "dev": "npm run uninstall && npm run install && bash scripts/dev.sh"
   }
 }
