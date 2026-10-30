@@ -35,6 +35,7 @@ export default class GclockExtension extends Extension {
                     showSeconds: this._settings.get_boolean('show-seconds'),
                     opacity: this._settings.get_int('opacity') / 100,
                     flip: this._settings.get_int('position-x') >= 50,
+                    fontName: this._settings.get_string('font-name'),
                 });
             } finally {
                 // Release native Cairo resources immediately, including when

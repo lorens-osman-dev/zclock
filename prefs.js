@@ -34,6 +34,8 @@ export default class GclockPreferences extends ExtensionPreferences {
                 showSeconds: settings.get_boolean('show-seconds'),
                 opacity: settings.get_int('opacity') / 100,
                 flip: settings.get_int('position-x') >= 50,
+                fontName: settings.get_string('font-name'),
+
             });
             cr.restore();
             // GTK owns this context, so unlike St.DrawingArea's context we do
@@ -44,6 +46,20 @@ export default class GclockPreferences extends ExtensionPreferences {
 
         const appearance = new Adw.PreferencesGroup({title: 'Appearance'});
         page.add(appearance);
+
+        // Font family
+        const fontRow = new Adw.ActionRow({title: 'Font family'});
+        const fontButton = new Gtk.FontButton({
+            valign: Gtk.Align.CENTER,
+            use_font: true,  // Draws the button label in the chosen font
+            use_size: false, // Ignores the size since the clock handles its own scaling
+        });
+        
+        fontRow.add_suffix(fontButton);
+        settings.bind('font-name', fontButton, 'font', Gio.SettingsBindFlags.DEFAULT);
+        appearance.add(fontRow);
+
+
         // The table pairs each schema key with its UI text. Gio's two-way
         // binding handles both user interaction and changes from another app.
         for (const [key, title, subtitle] of [
