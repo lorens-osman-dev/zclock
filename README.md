@@ -8,9 +8,9 @@
 </p>
 
 
-<p align="left"> <img src="assets/ccc.png" style="height: 300px !important;" > </p>
+<p align="left"> <img src="assets/ccc.png" style="height: 200px !important;" > </p>
 
-<p align="left"> <img src="assets/ubuntu.jpg" style="height: 300px !important;" > </p>
+<p align="left"> <img src="assets/ubuntu.jpg"  > </p>
 
 
 
@@ -27,14 +27,13 @@ To install the latest version of the extension head to the Official GNOME Extens
 
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/lorens-osman-dev/zclock/main/scripts/downloadAndInstall.sh)
+curl -fsSL https://raw.githubusercontent.com/lorens-osman-dev/zclock/main/scripts/downloadAndInstall.sh | bash
 ```
 
-On Wayland, log out and back in after installing, then enable and configure it:
+Log out and back in after installing, then enable it using extension manager or:
 
 ```sh
 gnome-extensions enable zclock@lorens
-gnome-extensions prefs zclock@lorens
 ```
 
 
