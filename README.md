@@ -11,6 +11,8 @@ remain upright while the scales rotate.
 - Native GJS, Cairo and Pango rendering; no browser, network access, or runtime npm dependencies.
 - Click-through desktop widget above the wallpaper and below application windows.
 - 12/24-hour display, optional seconds ring, adjustable opacity.
+- Font family, text color, bold toggle, and independent font size (50–150%)
+  for the digital readout and dial labels, with live preview and reset.
 - Size and horizontal/vertical placement, with primary or specific display selection.
 - Automatically constrained to the chosen display's work area.
 - Live GTK4/libadwaita preferences with preview and reset.

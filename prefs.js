@@ -1,5 +1,6 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import Gdk from 'gi://Gdk';
 import Gtk from 'gi://Gtk';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {drawClock} from './src/renderer.js';
@@ -13,10 +14,10 @@ export default class GclockPreferences extends ExtensionPreferences {
         // update it immediately; there is intentionally no Apply/Save button.
         const settings = this.getSettings();
         window.set_default_size(640, 820);
-        const page = new Adw.PreferencesPage({title: 'gclock', icon_name: 'preferences-system-time-symbolic'});
+        const page = new Adw.PreferencesPage({title: 'Gclock', icon_name: 'preferences-system-time-symbolic'});
         window.add(page);
 
-        const previewGroup = new Adw.PreferencesGroup({title: 'gclock', description: 'Time, quietly. Rotating dials inspired by your reference.'});
+        const previewGroup = new Adw.PreferencesGroup({title: 'Gclock', description: ''});
         const preview = new Gtk.DrawingArea({content_height: 250, hexpand: true});
         preview.set_draw_func((_area, cr, width, height) => {
             // This dark color is the PREVIEW backdrop, like a sample wallpaper,
@@ -35,7 +36,9 @@ export default class GclockPreferences extends ExtensionPreferences {
                 opacity: settings.get_int('opacity') / 100,
                 flip: settings.get_int('position-x') >= 50,
                 fontName: settings.get_string('font-name'),
-
+                fontColor: settings.get_string('font-color'),
+                fontBold: settings.get_boolean('font-bold'),
+                fontSize: settings.get_int('font-size'),
             });
             cr.restore();
             // GTK owns this context, so unlike St.DrawingArea's context we do
@@ -53,12 +56,40 @@ export default class GclockPreferences extends ExtensionPreferences {
             valign: Gtk.Align.CENTER,
             use_font: true,  // Draws the button label in the chosen font
             use_size: false, // Ignores the size since the clock handles its own scaling
+            level: Gtk.FontChooserLevel.FAMILY,
         });
         
         fontRow.add_suffix(fontButton);
         settings.bind('font-name', fontButton, 'font', Gio.SettingsBindFlags.DEFAULT);
         appearance.add(fontRow);
 
+        const colorRow = new Adw.ActionRow({title: 'Font color'});
+        const colorButton = new Gtk.ColorButton({
+            title: 'Choose font color',
+            valign: Gtk.Align.CENTER,
+            use_alpha: false,
+        });
+        colorRow.add_suffix(colorButton);
+        colorRow.activatable_widget = colorButton;
+        appearance.add(colorRow);
+        const syncColor = () => {
+            const color = new Gdk.RGBA();
+            const value = settings.get_string('font-color');
+            color.parse(/^#[0-9a-f]{6}$/i.test(value) ? value : '#ffffff');
+            colorButton.set_rgba(color);
+        };
+        syncColor();
+        colorButton.connect('color-set', () => {
+            const color = colorButton.get_rgba();
+            const hex = [color.red, color.green, color.blue]
+                .map(channel => Math.round(channel * 255).toString(16).padStart(2, '0')).join('');
+            settings.set_string('font-color', `#${hex}`);
+        });
+        const boldRow = new Adw.SwitchRow({title: 'Bold text'});
+        settings.bind('font-bold', boldRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        appearance.add(boldRow);
+        this._spin(appearance, settings, 'font-size', 'Font size',
+            'Text scale (%) · independent of the overall clock size', 50, 150, 5);
 
         // The table pairs each schema key with its UI text. Gio's two-way
         // binding handles both user interaction and changes from another app.
@@ -102,7 +133,10 @@ export default class GclockPreferences extends ExtensionPreferences {
         // GTK's frame clock, the GTK counterpart of the Clutter timeline used
         // on the desktop. A one-second timeout here would preview jerky seconds
         // even though the desktop clock itself now moves smoothly.
-        const changed = settings.connect('changed', () => preview.queue_draw());
+        const changed = settings.connect('changed', () => {
+            syncColor();
+            preview.queue_draw();
+        });
         const tick = preview.add_tick_callback(() => {
             preview.queue_draw();
             return true; // Keep receiving ticks while the widget is mapped.

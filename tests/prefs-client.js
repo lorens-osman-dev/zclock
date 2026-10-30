@@ -1,5 +1,6 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import Gdk from 'gi://Gdk';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
@@ -8,8 +9,9 @@ const root = GLib.getenv('GCLOCK_SOURCE');
 const {default: Preferences} = await import(`file://${root}/prefs.js`);
 const [, bytes] = GLib.file_get_contents(`${root}/metadata.json`);
 const metadata = JSON.parse(new TextDecoder().decode(bytes));
-metadata.dir = Gio.File.new_for_path(root);
-metadata.path = root;
+const staged = `${GLib.getenv('XDG_DATA_HOME')}/gnome-shell/extensions/gclock@lorens`;
+metadata.dir = Gio.File.new_for_path(staged);
+metadata.path = staged;
 let failure = null;
 const app = new Adw.Application({application_id: 'local.gclock.PreferencesTest', flags: Gio.ApplicationFlags.NON_UNIQUE});
 app.connect('activate', () => {
@@ -47,9 +49,32 @@ app.connect('activate', () => {
                 visit(window);
                 const switches = widgets.filter(w => w instanceof Adw.SwitchRow);
                 const spins = widgets.filter(w => w instanceof Adw.SpinRow);
-                if (switches.length !== 3 || spins.length !== 5)
+                if (switches.length !== 5 || spins.length !== 6)
                     throw new Error(`Unexpected controls: ${switches.length} switches, ${spins.length} spins`);
                 const settings = preferences.getSettings();
+                const bold = switches.find(w => w.title === 'Bold text');
+                bold.active = true;
+                if (!settings.get_boolean('font-bold'))
+                    throw new Error('Bold binding did not update settings');
+                const fontSize = spins.find(w => w.title === 'Font size');
+                fontSize.value = 75;
+                if (settings.get_int('font-size') !== 75)
+                    throw new Error('Font size binding did not update settings');
+                const colorButton = widgets.find(w => w instanceof Gtk.ColorButton);
+                const color = new Gdk.RGBA();
+                color.parse('#ff8000');
+                colorButton.set_rgba(color);
+                colorButton.emit('color-set');
+                if (settings.get_string('font-color') !== '#ff8000')
+                    throw new Error('Color picker did not update settings');
+                settings.set_string('font-color', '#0080ff');
+                const selected = colorButton.get_rgba();
+                if (selected.red !== 0 || selected.blue !== 1)
+                    throw new Error('External color change did not update picker');
+                settings.set_boolean('font-bold', false);
+                settings.set_int('font-size', 125);
+                if (bold.active || fontSize.value !== 125)
+                    throw new Error('External font settings did not update controls');
                 const format = switches.find(w => w.title === '24-hour time');
                 format.active = true;
                 if (!settings.get_boolean('use-24-hour'))
@@ -60,7 +85,9 @@ app.connect('activate', () => {
                     throw new Error('Spin binding did not update settings');
                 const reset = widgets.find(w => w.get_label?.() === 'Reset to defaults');
                 reset.emit('clicked');
-                if (settings.get_int('height') !== 740 || settings.get_boolean('use-24-hour'))
+                if (settings.get_int('height') !== settings.get_default_value('height').deep_unpack() || settings.get_boolean('use-24-hour') ||
+                    settings.get_boolean('font-bold') || settings.get_int('font-size') !== 100 ||
+                    settings.get_string('font-color') !== '#ffffff' || colorButton.get_rgba().red !== 1)
                     throw new Error('Reset button did not restore defaults');
                 print('PASS: real GTK4/libadwaita preferences render, all controls bind, reset restores defaults');
             } catch (error) {

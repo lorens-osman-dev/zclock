@@ -26,17 +26,17 @@ function waitFor(fn, description) {
 }
 const uuid = new GLib.Variant('(s)', ['gclock@lorens']);
 const info = () => call('org.gnome.Shell.Extensions', 'GetExtensionInfo', uuid)[0];
-const actor = `global.window_group.get_children().find(a => a.name === 'gclock-desktop-clock')`;
+const actor = `Main.layoutManager._backgroundGroup.get_children().find(a => a.name === 'gclock-desktop-clock')`;
 waitFor(() => info().state.deep_unpack() === 1, 'extension enabled');
 waitFor(() => evaluate('true'), 'private test driver');
 // Close the startup overview to exercise the actual desktop widget.
 evaluate('Main.overview.hide(); true');
 waitFor(() => evaluate(`Boolean(${actor}?.visible)`), 'clock visible');
 expect(info().state.deep_unpack() === 1, 'GNOME Shell 50 loaded gclock without errors');
-const initial = evaluate(`(() => { const a=${actor}; const c=global.window_group.get_children(); return {x:a.x,y:a.y,width:a.width,height:a.height,reactive:a.reactive,aboveWallpaper:c.indexOf(a)>c.indexOf(Main.layoutManager._backgroundGroup)}; })()`);
-expect(initial.height === 740, 'configured clock size is applied');
+const initial = evaluate(`(() => { const a=${actor}; return {x:a.x,y:a.y,width:a.width,height:a.height,reactive:a.reactive,inBackground:a.get_parent()===Main.layoutManager._backgroundGroup}; })()`);
+expect(initial.height === 500, 'configured clock size is applied');
 expect(initial.reactive === false, 'clock is click-through');
-expect(initial.aboveWallpaper, 'clock is above wallpaper in the window layer');
+expect(initial.inBackground, 'clock is in the desktop background layer');
 
 // Count REAL drawing callbacks, rather than just checking that a timer exists.
 // At frame cadence there should be many paints inside a fraction of a second;
@@ -71,7 +71,7 @@ waitFor(() => evaluate(`${actor}.visible`) === false, 'overview visibility');
 expect(true, 'clock hides in overview');
 // Visibility is not enough: the frame driver must stop too, otherwise a
 // hidden clock would still spend CPU scheduling redraws every display frame.
-expect(evaluate(`Main.extensionManager.lookup('gclock@lorens').stateObj._timeline.is_playing()`) === false,
+expect(evaluate(`Main.extensionManager.lookup('gclock@lorens').stateObj._clocks[0].timeline.is_playing()`) === false,
     'animation stops while hidden in overview');
 evaluate('Main.overview.hide(); true');
 waitFor(() => evaluate(`${actor}.visible`) === true, 'restore desktop');
@@ -79,7 +79,7 @@ expect(true, 'clock returns after overview');
 
 // Keep a reference only in the test so we can prove disable stops the native
 // timeline itself, rather than merely removing the actor from the scene.
-evaluate(`globalThis.gclockOldTimeline = Main.extensionManager.lookup('gclock@lorens').stateObj._timeline; true`);
+evaluate(`globalThis.gclockOldTimeline = Main.extensionManager.lookup('gclock@lorens').stateObj._clocks[0].timeline; true`);
 call('org.gnome.Shell.Extensions', 'DisableExtension', uuid);
 waitFor(() => info().state.deep_unpack() === 2, 'disabled');
 expect(evaluate(`Boolean(${actor})`) === false, 'disable removes the desktop actor');
@@ -90,7 +90,7 @@ expect(evaluate('globalThis.gclockOldTimeline.get_actor() === null'),
 evaluate('delete globalThis.gclockOldTimeline; true');
 call('org.gnome.Shell.Extensions', 'EnableExtension', uuid);
 waitFor(() => info().state.deep_unpack() === 1 && evaluate(`Boolean(${actor})`), 'reenabled');
-expect(evaluate(`global.window_group.get_children().filter(a => a.name === 'gclock-desktop-clock').length`) === 1,
+expect(evaluate(`Main.layoutManager._backgroundGroup.get_children().filter(a => a.name === 'gclock-desktop-clock').length`) === 1,
     'reenabling produces exactly one actor');
 // Let the replacement timeline run across multiple cycles, then check Shell state.
 GLib.usleep(2_500_000);

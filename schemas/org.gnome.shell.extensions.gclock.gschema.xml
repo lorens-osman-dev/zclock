@@ -21,6 +21,9 @@
       <default>'Sans'</default>
       <summary>Font family name</summary>
     </key>
+    <key name="font-color" type="s"><default>'#ffffff'</default><summary>Text color in #RRGGBB format</summary></key>
+    <key name="font-bold" type="b"><default>false</default><summary>Use bold text</summary></key>
+    <key name="font-size" type="i"><default>100</default><range min="50" max="150"/><summary>Text size in percent of the original design</summary></key>
     <!-- show-on-all-monitors -->
     <key name="show-on-all-monitors" type="b">
       <default>true</default>

@@ -78,6 +78,9 @@ export default class GclockExtension extends Extension {
                         // If you added flip or fontName earlier, pass them here too
                         flip: this._settings.get_int('position-x') >= 50,
                         fontName: this._settings.get_string('font-name'),
+                        fontColor: this._settings.get_string('font-color'),
+                        fontBold: this._settings.get_boolean('font-bold'),
+                        fontSize: this._settings.get_int('font-size'),
                     });
                 } finally {
                     // Release native Cairo resources immediately, including when
