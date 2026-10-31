@@ -39,22 +39,28 @@ settings bindings, and resource ownership. Start with `src/model.ts`, then
 ## Development and verification
 
 Requires GNOME Shell 50, GJS, GLib tooling and `gnome-extensions`. Tests
-additionally use Node.js (built-in test runner) and Python 3 with Pillow.
+additionally use Node.js (built-in test runner). PNG pixel checks use `pngjs`,
+and ZIP validation uses `adm-zip`; both are development-only npm dependencies.
+No Python environment or Pillow installation is required.
 Run `npm ci` to install TypeScript, the GNOME 50/GJS type definitions and Node
-test types. Typings are development-only dependencies, not runtime imports.
+test types, along with the PNG/ZIP test tooling. Typings and test libraries are
+development-only dependencies, not runtime imports.
 
 The setup follows the [GJS TypeScript guide](https://gjs.guide/extensions/development/typescript.html):
 ES modules, strict checking, `ambient.d.ts` for GI/resource imports, and a build
 step because GNOME Shell runs JavaScript, not TypeScript. Local imports retain
 their `.js` suffix so the emitted modules load correctly in GJS.
-`npm run build` emits comment-preserving JavaScript to `dist/` and copies the
+`npm run build` emits JavaScript to `dist/` using the comment setting in
+`tsconfig.json` (source comments are retained in the TypeScript files) and copies the
 metadata, schema XML, README and license there. Tests compile separately into
 `dist-tests/`; neither tests, TypeScript sources nor npm dependencies ship in
-the extension ZIP. Generated directories and `node_modules/` are ignored.
+the extension ZIP. Node packaging tools compile separately into `dist-tools/`.
+Generated directories and `node_modules/` are ignored.
 
 ```sh
 npm ci                         # install locked development dependencies
 npm run build                  # compile runtime modules and stage dist/
+npm run build:tools            # compile Node.js ZIP validation tooling
 npm run typecheck              # strict runtime and test type checking
 npm test                       # build, model/font tests and build/comment checks
 npm run check                  # type checks, tests, syntax, schema, and Cairo pixels
@@ -87,3 +93,10 @@ print unrelated warnings when the isolated session starts or stops.
 fixture time **11:11:43**. Its transparent and black-composited PNGs are written
 under the system's temporary directory. This is a render fixture, not a live
 screenshot.
+
+`tests/check-render.ts` inspects those PNG fixtures using the shared Node.js
+pixel helpers in `tests/image.ts`, including transparency, color, subsecond
+movement and a black-composited illustration. Font and stroke tests use the
+same PNG decoder and explicit RGBA comparisons. Packaging validation in
+`scripts/verify-pack.ts` checks required files, excluded development files,
+the extension UUID and ZIP entry CRC integrity.

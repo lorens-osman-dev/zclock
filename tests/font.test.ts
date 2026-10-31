@@ -1,68 +1,58 @@
-import test from 'node:test';
+import test, {type TestContext} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, rmSync} from 'node:fs';
+import {mkdtempSync, readdirSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
+import type {PNG} from 'pngjs';
+import {readImage, pixels, equalPixels, alphaSum, inkHeight, type Box} from './image.js';
 
-test('native renderer applies font color, bold and size to texts(numbers\'s strings)', () => {
+function renderImages(t: TestContext): Record<string, PNG> {
     const directory = mkdtempSync(join(tmpdir(), 'zclock-font-'));
-    try {
-        const render = spawnSync('gjs', ['-m', 'dist-tests/tests/font-render.js', directory], {encoding: 'utf8'});
-        assert.equal(render.status, 0, render.stderr);
-        const check = spawnSync('python3', ['-c', `
-import sys
-from PIL import Image, ImageChops
-from pathlib import Path
-root = Path(sys.argv[1])
-images = {p.stem: Image.open(p).convert('RGBA') for p in root.glob('*.png')}
-# The hour crop contains only text, not the dial or capsule border.
-hour = lambda name: images[name].crop((0, 355, 170, 505))
-normal = hour('normal')
-colored = hour('color')
-pixels = [p for p in colored.getdata() if p[3] > 128]
-assert pixels and all(r > 250 and g == 0 and b == 0 for r, g, b, a in pixels), 'Font color must tint the hour glyphs'
-# Font color applies to the dial's number strings too.
-assert any(r > 250 and g == 0 and b == 0 and a > 20 for r, g, b, a in images['color'].crop((0, 0, 640, 350)).getdata()), 'Dial labels must use the font color'
+    t.after(() => rmSync(directory, {recursive: true, force: true}));
+    const render = spawnSync('gjs', ['-m', 'dist-tests/tests/font-render.js', directory], {encoding: 'utf8'});
+    assert.equal(render.status, 0, render.stderr);
+    return Object.fromEntries(readdirSync(directory).filter(name => name.endsWith('.png'))
+        .map(name => [name.slice(0, -4), readImage(join(directory, name))]));
+}
 
-ink = lambda image: sum(image.getchannel('A').getdata())
-assert ink(hour('bold')) > ink(normal) * 1.1, 'Bold must increase glyph ink'
-assert hour('small').getbbox()[3] - hour('small').getbbox()[1] < (normal.getbbox()[3] - normal.getbbox()[1]) * .75, 'Font size must scale text independently'
-assert ImageChops.difference(images['invalid'], images['normal']).convert('RGB').getbbox() is None, 'Invalid colors must fall back to white'
-assert any(r > 250 and g == 0 and b == 0 and a > 128 for r, g, b, a in images['flipped'].crop((470, 355, 640, 505)).getdata()), 'Font options must work when mirrored'
-`, directory], {encoding: 'utf8'});
-        assert.equal(check.status, 0, check.stderr);
-    } finally {
-        rmSync(directory, {recursive: true, force: true});
-    }
+test('native renderer applies font color, bold and size to texts(numbers\'s strings)', t => {
+    const images = renderImages(t);
+    // The hour crop contains only text, not the dial or capsule border.
+    const hour: Box = [0, 355, 170, 505];
+    const colored = pixels(images.color, hour).filter(value => value[3] > 128);
+    assert.ok(colored.length > 0 && colored.every(([r, g, b]) => r > 250 && g === 0 && b === 0),
+        'Font color must tint the hour glyphs');
+    // Font color applies to the dial's number strings too.
+    assert.ok(pixels(images.color, [0, 0, 640, 350]).some(([r, g, b, a]) => r > 250 && g === 0 && b === 0 && a > 20),
+        'Dial labels must use the font color');
+    assert.ok(alphaSum(images.bold, hour) > alphaSum(images.normal, hour) * 1.1, 'Bold must increase glyph ink');
+    assert.ok(inkHeight(images.small, hour) < inkHeight(images.normal, hour) * 0.75, 'Font size must scale text independently');
+    assert.ok(equalPixels(images.invalid, images.normal), 'Invalid colors must fall back to white');
+    assert.ok(pixels(images.flipped, [470, 355, 640, 505]).some(([r, g, b, a]) => r > 250 && g === 0 && b === 0 && a > 128),
+        'Font options must work when mirrored');
 });
 
-test('native renderer applies stroke color to dial ticks and capsule outline independently of text', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'zclock-stroke-'));
-    try {
-        const render = spawnSync('gjs', ['-m', 'dist-tests/tests/font-render.js', directory], {encoding: 'utf8'});
-        assert.equal(render.status, 0, render.stderr);
-        const check = spawnSync('python3', ['-c', `
-import sys
-from PIL import Image, ImageChops
-from pathlib import Path
-root = Path(sys.argv[1])
-images = {p.stem: Image.open(p).convert('RGBA') for p in root.glob('*.png')}
-normal, stroke = images['normal'], images['stroke']
-# Sample both dial rings away from their labels, and the capsule's lower border.
-for name, box in [('seconds', (320, 300, 355, 380)), ('minutes', (245, 300, 275, 360)), ('capsule', (280, 474, 300, 476))]:
-    pixels = [p for p in stroke.crop(box).getdata() if p[3] > 10]
-    assert pixels and all(r == 0 and g > 250 and b == 0 for r, g, b, a in pixels), f'{name} strokes must use the stroke color'
-assert ImageChops.difference(normal.getchannel('A'), stroke.getchannel('A')).getbbox() is None, 'Stroke color must preserve geometry and opacity'
-assert ImageChops.difference(normal.crop((0, 355, 170, 505)), stroke.crop((0, 355, 170, 505))).convert('RGB').getbbox() is None, 'Stroke color must not tint the hour text'
-assert ImageChops.difference(images['invalid-stroke'], normal).convert('RGB').getbbox() is None, 'Invalid stroke colors must fall back to white'
-assert ImageChops.difference(images['white-stroke'], normal).convert('RGB').getbbox() is None, 'White strokes must remain the default'
-flipped = images['flipped-stroke'].transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-assert any(r == 0 and g > 250 and b == 0 and a > 10 for r, g, b, a in flipped.crop((320, 300, 355, 380)).getdata()), 'Stroke color must work when mirrored'
-assert any(r > 250 and g == 0 and b == 0 and a > 128 for r, g, b, a in images['combined'].crop((0, 355, 170, 505)).getdata()), 'Font color must remain independent of stroke color'
-`, directory], {encoding: 'utf8'});
-        assert.equal(check.status, 0, check.stderr);
-    } finally {
-        rmSync(directory, {recursive: true, force: true});
+test('native renderer applies stroke color to dial ticks and capsule outline independently of text', t => {
+    const images = renderImages(t);
+    const {normal, stroke} = images;
+    // Sample both dial rings away from their labels, and the capsule's lower border.
+    const regions: [string, Box][] = [
+        ['seconds', [320, 300, 355, 380]],
+        ['minutes', [245, 300, 275, 360]],
+        ['capsule', [280, 474, 300, 476]],
+    ];
+    for (const [name, box] of regions) {
+        const visible = pixels(stroke, box).filter(value => value[3] > 10);
+        assert.ok(visible.length > 0 && visible.every(([r, g, b]) => r === 0 && g > 250 && b === 0),
+            `${name} strokes must use the stroke color`);
     }
+    assert.ok(equalPixels(normal, stroke, [0, 0, 640, 860], [3]), 'Stroke color must preserve geometry and opacity');
+    assert.ok(equalPixels(normal, stroke, [0, 355, 170, 505]), 'Stroke color must not tint the hour text');
+    assert.ok(equalPixels(images['invalid-stroke'], normal), 'Invalid stroke colors must fall back to white');
+    assert.ok(equalPixels(images['white-stroke'], normal), 'White strokes must remain the default');
+    assert.ok(pixels(images['flipped-stroke'], [640 - 355, 300, 640 - 320, 380])
+        .some(([r, g, b, a]) => r === 0 && g > 250 && b === 0 && a > 10), 'Stroke color must work when mirrored');
+    assert.ok(pixels(images.combined, [0, 355, 170, 505]).some(([r, g, b, a]) => r > 250 && g === 0 && b === 0 && a > 128),
+        'Font color must remain independent of stroke color');
 });

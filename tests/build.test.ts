@@ -16,14 +16,17 @@ function comments(source: string): string[] {
     return result;
 }
 
-test('build emits GJS modules and keeps source comments without shipping TypeScript', () => {
+test('build emits GJS modules with configured comments without shipping TypeScript', () => {
+    const config = ts.readConfigFile('tsconfig.json', ts.sys.readFile);
+    assert.equal(config.error, undefined);
+    const {options} = ts.parseJsonConfigFileContent(config.config, ts.sys, '.');
     const build = spawnSync('npm', ['run', 'build'], {encoding: 'utf8'});
     assert.equal(build.status, 0, build.stdout + build.stderr);
     for (const name of modules) {
         assert.ok(!existsSync(`${name}.js`), `Only TypeScript should be maintained: ${name}`);
         const source = readFileSync(`${name}.ts`, 'utf8');
         const emitted = readFileSync(`dist/${name}.js`, 'utf8');
-        assert.deepEqual(comments(emitted), comments(source), `Preserve comments: ${name}`);
+        assert.deepEqual(comments(emitted), options.removeComments ? [] : comments(source), `Configured comments: ${name}`);
         assert.ok(!emitted.includes('from \'@girs/'), 'Typings must not become runtime dependencies');
     }
     assert.equal(readFileSync('dist/metadata.json', 'utf8'), readFileSync('metadata.json', 'utf8'));

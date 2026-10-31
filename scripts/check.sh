@@ -8,4 +8,4 @@ for file in dist/extension.js dist/prefs.js dist/src/*.js; do node --check "$fil
 glib-compile-schemas --strict --dry-run schemas
 # Use the real GJS/Pango/Cairo renderer, then inspect its actual RGBA pixels.
 gjs -m dist-tests/tests/render.js
-python3 tests/check-render.py
+node dist-tests/tests/check-render.js
