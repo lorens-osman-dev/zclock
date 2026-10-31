@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process';
 test('native renderer applies font color, bold and size without changing dial strokes', () => {
     const directory = mkdtempSync(join(tmpdir(), 'zclock-font-'));
     try {
-        const render = spawnSync('gjs', ['-m', 'tests/font-render.js', directory], {encoding: 'utf8'});
+        const render = spawnSync('gjs', ['-m', 'dist-tests/tests/font-render.js', directory], {encoding: 'utf8'});
         assert.equal(render.status, 0, render.stderr);
         const check = spawnSync('python3', ['-c', `
 import sys

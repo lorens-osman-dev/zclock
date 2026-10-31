@@ -6,7 +6,7 @@ import {drawClock} from '../src/renderer.js';
 // The same renderer is used by Shell, so inspecting pixels tests real artwork.
 const output = ARGV[0] ?? GLib.build_filenamev([GLib.get_tmp_dir(), 'zclock-preview.png']);
 const directory = GLib.path_get_dirname(output);
-function render(path, milliseconds = 0, background = false) {
+function render(path: string, milliseconds = 0, background = false) {
     const surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, 640, 860);
     const cr = new Cairo.Context(surface);
     if (background) {

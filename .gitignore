@@ -3,3 +3,6 @@ schemas/gschemas.compiled
 __pycache__/
 *.pyc
 core
+node_modules/
+dist/
+dist-tests/

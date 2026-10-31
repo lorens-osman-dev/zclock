@@ -33,7 +33,7 @@ export const Logger = {
    * @param {string} msg
    * @returns {void}
    */
-  info(msg) {
+  info(msg: string): void {
     print(`${TAG} ${msg}`);
   },
 
@@ -44,13 +44,13 @@ export const Logger = {
    * @param {unknown} [error]
    * @returns {void}
    */
-  error(context, error) {
+  error(context: string, error?: unknown): void {
     let output = `${ETAG} ${context}`;
 
     if (error) {
       // JSDoc-typed shape for what we expect to read off an Error-like object
       /** @type {{ stack?: string, message?: string }} */
-      const err = /** @type {any} */ (error);
+      const err = /** @type {any} */ (error as {stack?: string; message?: string});
       const lines = err.stack
         ? err.stack.split('\n').filter(l => l.trim() !== '')
         : [`${err.message ?? error}`];

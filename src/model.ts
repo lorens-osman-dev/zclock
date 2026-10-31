@@ -11,21 +11,21 @@ export const DESIGN_HEIGHT = 860;
 // zero, pointing right. Larger values lie above it, like the reference image.
 // Don't round `current`: the fractional part is what makes the dial sweep.
 // A rollover changes the angle by 2π, which is the SAME screen position.
-export function dialAngle(value, current) {
+export function dialAngle(value: number, current: number): number {
     return (current - value) * Math.PI / 30;
 }
 
 // Positions are percentages of the FREE SPACE, not of the screen dimensions.
 // This means 100% aligns the widget's far edge with the monitor's far edge,
 // rather than putting its origin there and cutting most of the clock off.
-export function widgetBounds(area, requestedHeight, xPercent, yPercent) {
+export function widgetBounds(area: Rectangle, requestedHeight: number, xPercent: number, yPercent: number): Rectangle {
     // Constrain both dimensions while preserving the reference aspect ratio.
     // Work areas already exclude panels/docks. Their origins can be negative
     // when another monitor is positioned to the left of the primary display.
     const height = Math.max(1, Math.min(requestedHeight, area.height,
         area.width * DESIGN_HEIGHT / DESIGN_WIDTH));
     const width = Math.round(height * DESIGN_WIDTH / DESIGN_HEIGHT);
-    const fraction = value => Math.max(0, Math.min(100, value)) / 100;
+    const fraction = (value: number) => Math.max(0, Math.min(100, value)) / 100;
     return {
         x: Math.round(area.x + (area.width - width) * fraction(xPercent)),
         y: Math.round(area.y + (area.height - height) * fraction(yPercent)),
@@ -36,7 +36,7 @@ export function widgetBounds(area, requestedHeight, xPercent, yPercent) {
 
 // Derive every value from ONE local-time snapshot. Using separate Date objects
 // for the hour and minute could briefly show inconsistent values at a rollover.
-export function clockState(date, use24Hour = false) {
+export function clockState(date: Date, use24Hour = false): ClockState {
     const hours = date.getHours();
     // Milliseconds make seconds continuous between whole-second boundaries.
     // Feed that same fraction into minutes, so the inner dial also creeps
@@ -50,4 +50,18 @@ export function clockState(date, use24Hour = false) {
         minuteValue: date.getMinutes() + seconds / 60,
         secondValue: seconds,
     };
+}
+
+export interface Rectangle {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export interface ClockState {
+    hour: string;
+    minute: string;
+    minuteValue: number;
+    secondValue: number;
 }

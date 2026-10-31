@@ -3,12 +3,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "build": "bash scripts/build.sh",
+    "build:tests": "rm -rf dist-tests && tsc -p tests/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tests/tsconfig.json --noEmit",
+    "test": "npm run build && npm run build:tests && node --test dist-tests/tests/*.test.js",
     "check": "bash scripts/check.sh",
     "pack": "bash scripts/pack.sh",
     "shell-smoke": "bash scripts/shell-smoke.sh",
-    "install": "bash scripts/install.sh",
+    "install:extension": "bash scripts/install.sh",
     "uninstall": "bash scripts/uninstall.sh",
-    "dev": "npm run uninstall && npm run install && bash scripts/dev.sh"
+    "dev": "npm run uninstall && npm run install:extension && bash scripts/dev.sh"
+  },
+  "devDependencies": {
+    "@girs/gjs": "^5.6.0",
+    "@girs/gnome-shell": "~50.0.4",
+    "@types/node": "^26.6.6",
+    "typescript": "^6.0.3"
   }
 }

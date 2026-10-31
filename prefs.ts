@@ -9,7 +9,7 @@ import {drawClock} from './src/renderer.js';
 // only the renderer/model lets us preview the clock without importing Shell's
 // St/Clutter objects, which cannot be used in this process.
 export default class ZclockPreferences extends ExtensionPreferences {
-    fillPreferencesWindow(window) {
+    async fillPreferencesWindow(window: Adw.PreferencesWindow): Promise<void> {
         // This is the same GSettings schema the desktop actor reads. Bindings
         // update it immediately; there is intentionally no Apply/Save button.
         const settings = this.getSettings();
@@ -162,7 +162,7 @@ export default class ZclockPreferences extends ExtensionPreferences {
     // All numeric rows follow the same binding pattern. Gtk.Adjustment owns
     // the bounds and increments; the schema remains the persisted source of
     // truth, and digits: 0 prevents fractional sizes/percentages in the UI.
-    _spin(group, settings, key, title, subtitle, lower, upper, step) {
+    _spin(group: Adw.PreferencesGroup, settings: Gio.Settings, key: string, title: string, subtitle: string, lower: number, upper: number, step: number): void {
         const row = new Adw.SpinRow({title, subtitle,
             adjustment: new Gtk.Adjustment({lower, upper, step_increment: step, page_increment: step * 5}),
             digits: 0,

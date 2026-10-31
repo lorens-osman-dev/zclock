@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
+import type Gio from 'gi://Gio';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import {widgetBounds} from './src/model.js';
@@ -9,7 +10,11 @@ import {drawClock} from './src/renderer.js';
 // driver and signal connections. Time math and artwork live in separate files
 // so they can also run outside Shell in the automated tests and GTK preview.
 export default class ZclockExtension extends Extension {
-    enable() {
+    declare private _signals: [SignalSource, number][];
+    declare private _clocks: ClockInstance[];
+    declare private _settings: Gio.Settings | null;
+
+    enable(): void {
         // Every enable gets fresh state. Shell can disable/re-enable extensions
         // when locking, changing sessions or applying settings in Extensions.
         this._signals = [];
@@ -31,11 +36,13 @@ export default class ZclockExtension extends Extension {
     // Remember each connection to a long-lived Shell/settings object. Leaving
     // any of these connected after disable would retain this extension and
     // could call back into an actor that has already been destroyed.
-    _connect(object, signal, callback) {
+    _connect(object: SignalSource, signal: string, callback: () => void): void {
         this._signals.push([object, object.connect(signal, callback)]);
     }
 
-    _update() {
+    _update(): void {
+        const settings = this._settings;
+        if (!settings) return;
         const monitors = Main.layoutManager.monitors;
         if (!monitors.length) {
             // Monitor lists can be temporarily empty during hotplug/reconfigure.
@@ -43,8 +50,8 @@ export default class ZclockExtension extends Extension {
             return;
         }
 
-        const showOnAll = this._settings.get_boolean('show-on-all-monitors');
-        const requested = this._settings.get_int('monitor');
+        const showOnAll = settings.get_boolean('show-on-all-monitors');
+        const requested = settings.get_int('monitor');
         
         // Determine which monitor indices need a clock rendered
         // -1 follows the primary display. If a chosen display disappears,
@@ -64,7 +71,7 @@ export default class ZclockExtension extends Extension {
                 accessible_name: 'Desktop clock',
             });
 
-            area.connect('repaint', area => {
+            area.connect('repaint', () => {
                 // DrawingArea provides a fresh Cairo context for this repaint.
                 // A single Date snapshot supplies fractional local time to both
                 // dials, so the digital text and rotating scales cannot disagree.
@@ -72,15 +79,15 @@ export default class ZclockExtension extends Extension {
                 try {
                     const [width, height] = area.get_surface_size();
                     drawClock(cr, width, height, new Date(), {
-                        use24Hour: this._settings.get_boolean('use-24-hour'),
-                        showSeconds: this._settings.get_boolean('show-seconds'),
-                        opacity: this._settings.get_int('opacity') / 100,
+                        use24Hour: settings.get_boolean('use-24-hour'),
+                        showSeconds: settings.get_boolean('show-seconds'),
+                        opacity: settings.get_int('opacity') / 100,
                         // If you added flip or fontName earlier, pass them here too
-                        flip: this._settings.get_int('position-x') >= 50,
-                        fontName: this._settings.get_string('font-name'),
-                        fontColor: this._settings.get_string('font-color'),
-                        fontBold: this._settings.get_boolean('font-bold'),
-                        fontSize: this._settings.get_int('font-size'),
+                        flip: settings.get_int('position-x') >= 50,
+                        fontName: settings.get_string('font-name'),
+                        fontColor: settings.get_string('font-color'),
+                        fontBold: settings.get_boolean('font-bold'),
+                        fontSize: settings.get_int('font-size'),
                     });
                 } finally {
                     // Release native Cairo resources immediately, including when
@@ -116,7 +123,7 @@ export default class ZclockExtension extends Extension {
 
         // 2. Remove extra clock instances if the user disabled multi-monitor
         while (this._clocks.length > activeIndices.length) {
-            const clock = this._clocks.pop();
+            const clock = this._clocks.pop()!;
             clock.timeline.stop();
             clock.timeline.set_actor(null);
             clock.area.disconnect(clock.mappedSignalId);
@@ -128,9 +135,9 @@ export default class ZclockExtension extends Extension {
             const index = activeIndices[i];
             const clock = this._clocks[i];
             const bounds = widgetBounds(Main.layoutManager.getWorkAreaForMonitor(index),
-                this._settings.get_int('height'),
-                this._settings.get_int('position-x'),
-                this._settings.get_int('position-y'));
+                settings.get_int('height'),
+                settings.get_int('position-x'),
+                settings.get_int('position-y'));
             
             clock.area.set_position(bounds.x, bounds.y);
             clock.area.set_size(bounds.width, bounds.height);
@@ -140,12 +147,12 @@ export default class ZclockExtension extends Extension {
         this._syncVisibility();
     }
 
-    _syncVisibility() {
+    _syncVisibility(): void {
         // Never draw over the lock screen. Overview hiding is optional, but
         // monitor availability and lock state always take precedence.
         const visible = Main.layoutManager.monitors.length > 0 &&
             !Main.sessionMode.isLocked &&
-            !(Main.overview.visible && this._settings.get_boolean('hide-in-overview'));
+            !(Main.overview.visible && this._settings?.get_boolean('hide-in-overview'));
 
         for (const clock of this._clocks) {
             clock.area.visible = visible;
@@ -154,7 +161,7 @@ export default class ZclockExtension extends Extension {
         this._syncAnimation();
     }
 
-    _syncAnimation() {
+    _syncAnimation(): void {
         // Avoid spending CPU on continuous repainting while the clock is hidden.
         // stop() rewinds the timeline; this cannot rewind the dial because its
         // angle comes from real wall-clock time, not timeline progress.
@@ -167,7 +174,7 @@ export default class ZclockExtension extends Extension {
         }
     }
 
-    disable() {
+    disable(): void {
         // Stop animation FIRST so no later frame can repaint a destroyed actor.
         // Break the timeline's reference to the actor as well as our own.
         // Destroying the actor also disconnects its own repaint callback.
@@ -184,4 +191,14 @@ export default class ZclockExtension extends Extension {
         this._signals = [];
         this._settings = null;
     }
+}
+interface SignalSource {
+    connect(signal: string, callback: () => void): number;
+    disconnect(id: number): void;
+}
+
+interface ClockInstance {
+    area: St.DrawingArea;
+    timeline: Clutter.Timeline;
+    mappedSignalId: number;
 }

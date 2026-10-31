@@ -6,7 +6,7 @@ import {clockState, dialAngle, DESIGN_WIDTH, DESIGN_HEIGHT} from './model.js';
 // Draw text by the center of its visible ink, not its font's baseline. This
 // keeps digits visually centered even when font metrics differ across systems.
 // Add the flip parameter and un-mirror the context before drawing text
-function text(cr, value, x, y, size, alpha, flip, fontName, style) {
+function text(cr: Cairo.Context, value: string, x: number, y: number, size: number, alpha: number, flip: boolean, fontName: string, style: TextStyle): void {
     // Pango uses its own integer units. Absolute size means reference-canvas
     // pixels, not points affected by the desktop's text DPI setting.
     const layout = PangoCairo.create_layout(cr);
@@ -15,7 +15,7 @@ function text(cr, value, x, y, size, alpha, flip, fontName, style) {
     font.set_weight(style.bold ? Pango.Weight.BOLD : Pango.Weight.NORMAL);
     layout.set_font_description(font);
     layout.set_text(value, -1);
-    const [ink] = layout.get_pixel_extents();
+    const ink = layout.get_pixel_extents()[0]!;
     cr.setSourceRGBA(...style.color, alpha);
     
     cr.save();
@@ -35,7 +35,7 @@ function text(cr, value, x, y, size, alpha, flip, fontName, style) {
 // continuously, but numbers remain upright because we move their centers
 // along the circle rather than rotating the entire Cairo coordinate system.
 // Add the flip parameter and pass it down to text()
-function ring(cr, current, radius, labelRadius, opacity, flip, fontName, style) {
+function ring(cr: Cairo.Context, current: number, radius: number, labelRadius: number, opacity: number, flip: boolean, fontName: string, style: TextStyle): void {
     // A center just beyond the left edge gives the intentionally cropped,
     // off-center instrument-dial appearance from the reference.
     const cx = -3;
@@ -66,7 +66,7 @@ function ring(cr, current, radius, labelRadius, opacity, flip, fontName, style) 
 }
 // Append a pill-shaped path without painting it. Sharing this geometry between
 // clipping and the border guarantees the empty interior matches the outline.
-function capsule(cr, x, y, width, height) {
+function capsule(cr: Cairo.Context, x: number, y: number, width: number, height: number): void {
     const radius = height / 2;
     cr.newSubPath();
     cr.arc(x + width - radius, y + radius, radius, -Math.PI / 2, Math.PI / 2);
@@ -77,13 +77,13 @@ function capsule(cr, x, y, width, height) {
 // No GTK/Shell dependencies: the desktop widget, preferences and offscreen
 // tests all use this exact drawing function. The caller owns the Cairo context.
 // Add the flip option, apply the mirror transform, and pass it to elements
-export function drawClock(cr, width, height, date, options = {}) {
+export function drawClock(cr: Cairo.Context, width: number, height: number, date: Date, options: ClockOptions = {}): void {
     const {use24Hour = false, showSeconds = true, opacity = 1, flip = false,
         fontName = 'Sans', fontColor = '#ffffff', fontBold = false, fontSize = 100} = options;
     // The picker stores #RRGGBB. Invalid externally supplied colors stay legible.
     const color = /^#[0-9a-f]{6}$/i.test(fontColor) ? fontColor : '#ffffff';
-    const style = {
-        color: [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16) / 255),
+    const style: TextStyle = {
+        color: [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16) / 255) as [number, number, number],
         bold: fontBold,
         scale: Math.max(50, Math.min(150, fontSize)) / 100,
     };
@@ -123,4 +123,20 @@ export function drawClock(cr, width, height, date, options = {}) {
     text(cr, state.hour, 80, 430, 116, opacity, flip, fontName, style);
     text(cr, state.minute, 229, 430, 48, opacity, flip, fontName, style);
     cr.restore();
+}
+export interface ClockOptions {
+    use24Hour?: boolean;
+    showSeconds?: boolean;
+    opacity?: number;
+    flip?: boolean;
+    fontName?: string;
+    fontColor?: string;
+    fontBold?: boolean;
+    fontSize?: number;
+}
+
+interface TextStyle {
+    color: [number, number, number];
+    bold: boolean;
+    scale: number;
 }
