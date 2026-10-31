@@ -46,7 +46,7 @@ are no npm packages to install.
 npm test                       # pure local-time and placement tests
 npm run check                  # tests, syntax, schema, and Cairo pixel checks
 npm run shell-smoke            # isolated headless GNOME Shell + GTK preferences
-npm run pack                   # create and validate installable ZIP in dist/
+npm run pack                   # create and validate installable ZIP in distZip/
 npm run install                # install the extension locally
 npm run uninstall              # remove the locally installed extension
 npm run dev                    # uninstall, reinstall, and start the dev workflow
