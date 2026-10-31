@@ -9,7 +9,7 @@ import {verifyPack} from '../scripts/verify-pack.js';
 function bundle(): AdmZip {
     const zip = new AdmZip();
     for (const name of ['extension.js', 'prefs.js', 'src/model.js', 'src/renderer.js',
-        'schemas/org.gnome.shell.extensions.zclock.gschema.xml', 'LICENSE', 'README.md'])
+        'schemas/org.gnome.shell.extensions.zclock.gschema.xml', 'LICENSE'])
         zip.addFile(name, Buffer.from('fixture content'));
     zip.addFile('metadata.json', Buffer.from(JSON.stringify({uuid: 'zclock@lorens'})));
     return zip;

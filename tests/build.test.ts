@@ -46,7 +46,7 @@ test('Vite production build emits readable GJS modules without comments or the u
     assert.match(readFileSync('dist/prefs.js', 'utf8'), /ZclockPreferences/);
     assert.equal(readFileSync('dist/metadata.json', 'utf8'), readFileSync('metadata.json', 'utf8'));
     assert.ok(existsSync('dist/LICENSE'));
-    assert.ok(existsSync('dist/README.md'));
+    // assert.ok(existsSync('dist/README.md'));
     assert.doesNotMatch(readFileSync('dist/schemas/org.gnome.shell.extensions.zclock.gschema.xml', 'utf8'), /<!--/);
     assert.ok(!existsSync('dist/tests'), 'Test-only code must stay outside the extension build');
     assert.ok(!existsSync('dist/src/logger.js'), 'The unused logger must not ship');

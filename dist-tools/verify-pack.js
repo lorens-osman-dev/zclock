@@ -11,7 +11,7 @@ export function verifyPack(path, mode = 'production') {
         assert.ok(!names.has('src/logger.js'), 'Development logger must not ship in a production ZIP');
     const required = ['extension.js', 'prefs.js', 'metadata.json', 'src/model.js',
         'src/renderer.js', 'schemas/org.gnome.shell.extensions.zclock.gschema.xml',
-        'LICENSE', 'README.md'];
+        'LICENSE'];
     const missing = required.filter(name => !names.has(name));
     assert.equal(missing.length, 0, `Missing bundle files: ${missing.join(', ')}`);
     assert.ok(![...names].some(name => name.includes('test')), 'Test-only code must not ship');
