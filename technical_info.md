@@ -39,7 +39,8 @@ settings bindings, and resource ownership. Start with `src/model.ts`, then
 ## Development and verification
 
 Requires GNOME Shell 50, GJS, GLib tooling and `gnome-extensions`. Tests
-additionally use Node.js (built-in test runner). PNG pixel checks use `pngjs`,
+additionally use Node.js (built-in test runner). Node must satisfy the version
+range in `package.json` for Vite. PNG pixel checks use `pngjs`,
 and ZIP validation uses `adm-zip`; both are development-only npm dependencies.
 No Python environment or Pillow installation is required.
 Run `npm ci` to install TypeScript, the GNOME 50/GJS type definitions and Node
@@ -50,16 +51,29 @@ The setup follows the [GJS TypeScript guide](https://gjs.guide/extensions/develo
 ES modules, strict checking, `ambient.d.ts` for GI/resource imports, and a build
 step because GNOME Shell runs JavaScript, not TypeScript. Local imports retain
 their `.js` suffix so the emitted modules load correctly in GJS.
-`npm run build` emits JavaScript to `dist/` using the comment setting in
-`tsconfig.json` (source comments are retained in the TypeScript files) and copies the
-metadata, schema XML, README and license there. Tests compile separately into
+`vite.config.ts` owns the extension build. `npm run build` runs Vite in production
+mode, following the imports from `extension.ts` and `prefs.ts` rather than
+compiling every source file. The unused logger is therefore absent. GNOME
+`gi://`, `resource:///` and `cairo` imports remain external, with ES-module paths
+preserved. Production output is formatted for review without name mangling or
+code compression, and JavaScript/XML comments are removed. TypeScript source
+comments are retained. A small Vite asset hook stages metadata, schema XML,
+README and license alongside the generated JavaScript in `dist/`.
+
+`npm run build:dev` uses Vite's `development` mode and adds `src/logger.ts` as a
+development-only entry. Both modes clean and rebuild the same `dist/` directory;
+there are no separate development TypeScript compiler configurations.
+Type checking remains a separate `npm run typecheck` step because Vite transforms
+TypeScript without checking its types. Tests compile separately into
 `dist-tests/`; neither tests, TypeScript sources nor npm dependencies ship in
 the extension ZIP. Node packaging tools compile separately into `dist-tools/`.
-Generated directories and `node_modules/` are ignored.
+`node_modules/` is ignored; the repository retains its existing policy for
+generated release and test files.
 
 ```sh
 npm ci                         # install locked development dependencies
 npm run build                  # compile runtime modules and stage dist/
+npm run build:dev              # Vite development build, including src/logger.js
 npm run build:tools            # compile Node.js ZIP validation tooling
 npm run typecheck              # strict runtime and test type checking
 npm test                       # build, model/font tests and build/comment checks
@@ -71,10 +85,17 @@ npm run uninstall              # remove the locally installed extension
 npm run dev                    # uninstall, reinstall, and start the dev workflow
 ```
 
-`npm run dev` runs `scripts/dev.sh` after reinstalling the extension. These
+`npm run dev` forwards `--mode development` through packaging and installation,
+then runs `scripts/dev.sh` for the nested Shell session. These
 commands are defined in `package.json`. Installation uses `install:extension`
 rather than npm's `install` lifecycle hook, so `npm install` and `npm ci` never
 install or replace the extension in your running desktop session.
+
+Before submitting to the reviewer, run `npm run pack`. This always rebuilds in
+production mode unless explicitly given another mode. Submit
+`distZip/zclock@lorens.shell-extension.zip`; production validation rejects the
+development logger. Development and production share the output and ZIP paths,
+so rebuild the production ZIP after using the development workflow.
 
 The smoke test starts a **separate compositor and private session bus** with its
 own data, config and cache directories under `$TMPDIR`. It verifies loading,
