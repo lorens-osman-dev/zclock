@@ -4,8 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mode="${1:-production}"
 case "$mode" in
-    production) source=dist ;;
-    development) source=dist-dev ;;
+    production) source=dissts/dist ;;
+    development) source=dissts/dist-dev ;;
     *) printf 'Usage: %s [production|development]\n' "$0" >&2; exit 2 ;;
 esac
 npm run build -- --mode "$mode"
@@ -23,7 +23,7 @@ glib-compile-schemas --strict "$XDG_DATA_HOME/gnome-shell/extensions/zclock@lore
 # The test-only companion allows introspection on this private D-Bus only.
 DRIVER="$XDG_DATA_HOME/gnome-shell/extensions/zclock-test@local"
 mkdir -p "$DRIVER"
-cp dist-tests/tests/driver.js "$DRIVER/extension.js"
+cp dissts/dist-tests/tests/driver.js "$DRIVER/extension.js"
 node --input-type=module -e 'import {writeFileSync} from "node:fs"; import {join} from "node:path"; writeFileSync(join(process.env.XDG_DATA_HOME, "gnome-shell/extensions/zclock-test@local/metadata.json"), JSON.stringify({uuid: "zclock-test@local", name: "Test driver", description: "Isolated smoke test only", "shell-version": ["50"]}), "utf8");'
 dbus-run-session -- bash -euc '
     gsettings set org.gnome.shell enabled-extensions "['\''zclock-test@local'\'', '\''zclock@lorens'\'']"
@@ -32,9 +32,9 @@ dbus-run-session -- bash -euc '
     gnome-shell --headless --virtual-monitor=1280x900 --wayland-display=zclock-test >"$GCLOCK_TEST_ROOT/shell.log" 2>&1 &
     shell_pid=$!
     trap "kill $shell_pid 2>/dev/null || true; wait $shell_pid 2>/dev/null || true" EXIT
-    gjs -m "$GCLOCK_SOURCE/dist-tests/tests/shell-client.js"
-    WAYLAND_DISPLAY=zclock-test GI_TYPELIB_PATH=/usr/lib/gnome-shell/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH} G_DEBUG=fatal-criticals timeout 30s gjs -m "$GCLOCK_SOURCE/dist-tests/tests/prefs-client.js" >"$GCLOCK_TEST_ROOT/prefs.log" 2>&1 || { cat "$GCLOCK_TEST_ROOT/prefs.log"; exit 1; }
+    gjs -m "$GCLOCK_SOURCE/dissts/dist-tests/tests/shell-client.js"
+    WAYLAND_DISPLAY=zclock-test GI_TYPELIB_PATH=/usr/lib/gnome-shell/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH} G_DEBUG=fatal-criticals timeout 30s gjs -m "$GCLOCK_SOURCE/dissts/dist-tests/tests/prefs-client.js" >"$GCLOCK_TEST_ROOT/prefs.log" 2>&1 || { cat "$GCLOCK_TEST_ROOT/prefs.log"; exit 1; }
     cat "$GCLOCK_TEST_ROOT/prefs.log"
 '
-node dist-tests/tests/check-lifecycle.js "$ROOT/shell.log" "$mode"
+node dissts/dist-tests/tests/check-lifecycle.js "$ROOT/shell.log" "$mode"
 printf 'Shell smoke-test artifacts: %s\n' "$ROOT"

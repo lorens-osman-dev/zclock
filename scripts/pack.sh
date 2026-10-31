@@ -8,11 +8,11 @@ fi
 npm run build
 npm run build:tools
 glib-compile-schemas --strict --dry-run schemas
-mkdir -p distZip
+mkdir -p dissts/dist-zip
 # src/ is not a standard extension entry point, so explicitly include it.
 # Tests (including the unsafe isolated test driver) must never be packaged.
-gnome-extensions pack --force --out-dir=distZip \
-    --extra-source=src --extra-source=LICENSE  dist
+gnome-extensions pack --force --out-dir=dissts/dist-zip \
+    --extra-source=src --extra-source=LICENSE  dissts/dist
 # Read back the ZIP: successful command execution alone does not prove that
 # every runtime dependency made it into the installable artifact.
-node dist-tools/verify-pack.js distZip/zclock@lorens.shell-extension.zip
+node dissts/dist-tools/verify-pack.js dissts/dist-zip/zclock@lorens.shell-extension.zip

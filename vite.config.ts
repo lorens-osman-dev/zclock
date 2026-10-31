@@ -30,7 +30,7 @@ export default defineConfig(({mode}) => {
         build: {
             target: 'es2023',
             modulePreload: false,
-            outDir: development ? 'dist-dev' : 'dist',
+            outDir: development ? 'dissts/dist-dev' : 'dissts/dist',
             emptyOutDir: true,
             minify: development ? false : 'terser',
             terserOptions: {

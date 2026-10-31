@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly DOWNLOAD_URL='https://raw.githubusercontent.com/lorens-osman-dev/zclock/main/distZip/zclock%40lorens.shell-extension.zip'
+readonly DOWNLOAD_URL='https://raw.githubusercontent.com/lorens-osman-dev/zclock/main/dissts/dist-zip/zclock%40lorens.shell-extension.zip'
 readonly ARCHIVE_NAME='zclock@lorens.shell-extension.zip'
 
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then

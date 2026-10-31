@@ -11,7 +11,7 @@ export XDG_DATA_HOME="$ROOT/data"
 export XDG_CACHE_HOME="$ROOT/cache"
 EXTENSION="$XDG_DATA_HOME/gnome-shell/extensions/$UUID"
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$EXTENSION"
-cp -r dist-dev/. "$EXTENSION/"
+cp -r dissts/dist-dev/. "$EXTENSION/"
 glib-compile-schemas --strict "$EXTENSION/schemas"
 
 dbus-run-session -- bash -euc '

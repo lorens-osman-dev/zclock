@@ -10,7 +10,7 @@ import {readImage, pixels, equalPixels, alphaSum, inkHeight, type Box} from './i
 function renderImages(t: TestContext): Record<string, PNG> {
     const directory = mkdtempSync(join(tmpdir(), 'zclock-font-'));
     t.after(() => rmSync(directory, {recursive: true, force: true}));
-    const render = spawnSync('gjs', ['-m', 'dist-tests/tests/font-render.js', directory], {encoding: 'utf8'});
+    const render = spawnSync('gjs', ['-m', 'dissts/dist-tests/tests/font-render.js', directory], {encoding: 'utf8'});
     assert.equal(render.status, 0, render.stderr);
     return Object.fromEntries(readdirSync(directory).filter(name => name.endsWith('.png'))
         .map(name => [name.slice(0, -4), readImage(join(directory, name))]));

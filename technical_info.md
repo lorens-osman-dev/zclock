@@ -60,11 +60,11 @@ so production contains neither the calls nor the logger module. GNOME
 preserved. Production output is formatted for review without name mangling or
 code compression, and JavaScript/XML comments are removed. TypeScript source
 comments are retained. A small Vite asset hook stages metadata, schema XML,
-license alongside the generated JavaScript in `dist/`.
+license alongside the generated JavaScript in `dissts/dist/`.
 
-`npm run build:dev` uses Vite's `development` mode and writes to `dist-dev/`,
+`npm run build:dev` uses Vite's `development` mode and writes to `dissts/dist-dev/`,
 including the logger actually imported by the lifecycle methods. Production
-continues to use `dist/`. One Vite configuration handles both modes, and neither
+continues to use `dissts/dist/`. One Vite configuration handles both modes, and neither
 development builds nor the development session overwrite the reviewer ZIP.
 The `DEV`/`PROD` constants are explicitly tied to the Vite mode, because
 `vite build --mode development` alone still defaults to production `NODE_ENV`.
@@ -73,14 +73,25 @@ TypeScript without checking its types. The root TypeScript configuration uses
 `noEmit` so a plain `tsc` invocation cannot overwrite Vite output. Tests and Node
 tools explicitly enable emission into their own output directories.
 Tests compile separately into
-`dist-tests/`; neither tests, TypeScript sources nor npm dependencies ship in
-the extension ZIP. Node packaging tools compile separately into `dist-tools/`.
+`dissts/dist-tests/`; neither tests, TypeScript sources nor npm dependencies ship in
+the extension ZIP. Node packaging tools compile separately into `dissts/dist-tools/`.
 `node_modules/` is ignored; the repository retains its existing policy for
 generated release and test files.
 
+All generated outputs are grouped under `dissts/`:
+
+```text
+dissts/
+├── dist/
+├── dist-tools/
+├── dist-tests/
+├── dist-dev/
+└── dist-zip/
+```
+
 ```sh
 npm ci                         # install locked development dependencies
-npm run build                  # compile runtime modules and stage dist/
+npm run build                  # compile runtime modules and stage dissts/dist/
 npm run build:dev              # Vite development build, including src/logger.js
 npm run build:tools            # compile Node.js ZIP validation tooling
 npm run typecheck              # strict runtime and test type checking
@@ -88,15 +99,15 @@ npm test                       # build, model/font tests and build/comment check
 npm run check                  # type checks, tests, syntax, schema, and Cairo pixels
 npm run shell-smoke            # isolated headless GNOME Shell + GTK preferences
 npm run shell-smoke -- development # also verify actual enable/disable logger output
-npm run pack                   # create and validate installable ZIP in distZip/
+npm run pack                   # create and validate installable ZIP in dissts/dist-zip/
 npm run install:extension      # build and install the extension locally
 npm run uninstall              # remove the locally installed extension
-npm run dev                    # build dist-dev/ and launch an isolated nested Shell
+npm run dev                    # build dissts/dist-dev/ and launch an isolated nested Shell
 ```
 
-`npm run dev` builds `dist-dev/` and stages that extension with compiled schemas
+`npm run dev` builds `dissts/dist-dev/` and stages that extension with compiled schemas
 inside temporary data/config/cache directories for the nested Shell session.
-It does not uninstall or replace the live extension, write `dist/`, or create a
+It does not uninstall or replace the live extension, write `dissts/dist/`, or create a
 development ZIP at the reviewer archive path. Temporary session files are
 cleaned up when the nested session exits. These
 commands are defined in `package.json`. Installation uses `install:extension`
@@ -105,8 +116,8 @@ install or replace the extension in your running desktop session.
 
 Before submitting to the reviewer, run `npm run pack`. This always rebuilds in
 production mode; development flags are rejected. Submit
-`distZip/zclock@lorens.shell-extension.zip`; production validation rejects the
-development logger. Dev output is isolated in the ignored `dist-dev/` directory.
+`dissts/dist-zip/zclock@lorens.shell-extension.zip`; production validation rejects the
+development logger. Dev output is isolated in the ignored `dissts/dist-dev/` directory.
 
 The smoke test starts a **separate compositor and private session bus** with its
 own data, config and cache directories under `$TMPDIR`. It verifies loading,

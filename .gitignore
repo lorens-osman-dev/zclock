@@ -4,5 +4,6 @@ __pycache__/
 *.pyc
 core
 node_modules/
-dist-dev/
-dist-tests/
+dissts/dist-dev/
+dissts/dist-tests/
+dissts/dist-tools/

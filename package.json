@@ -5,10 +5,10 @@
   "scripts": {
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "build:tests": "rm -rf dist-tests && tsc -p tests/tsconfig.json",
-    "build:tools": "rm -rf dist-tools && tsc -p scripts/tsconfig.json",
+    "build:tests": "rm -rf dissts/dist-tests && tsc -p tests/tsconfig.json",
+    "build:tools": "rm -rf dissts/dist-tools && tsc -p scripts/tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tests/tsconfig.json --noEmit && tsc -p scripts/tsconfig.json --noEmit && tsc -p tsconfig.node.json",
-    "test": "npm run build && npm run build:tests && node --test dist-tests/tests/*.test.js",
+    "test": "npm run build && npm run build:tests && node --test dissts/dist-tests/tests/*.test.js",
     "check": "bash scripts/check.sh",
     "pack": "bash scripts/pack.sh",
     "shell-smoke": "bash scripts/shell-smoke.sh",

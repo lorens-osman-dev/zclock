@@ -3,7 +3,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "rootDir": ".",
-    "outDir": "./dist",
+    "outDir": "./dissts/dist",
     "sourceMap": false,
     "strict": true,
     "skipLibCheck": true,
