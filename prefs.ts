@@ -46,6 +46,7 @@ export default class ZclockPreferences extends ExtensionPreferences {
                 flip: settings.get_int('position-x') >= 50,
                 fontName: settings.get_string('font-name'),
                 fontColor: settings.get_string('font-color'),
+                strokeColor: settings.get_string('stroke-color'),
                 fontBold: settings.get_boolean('font-bold'),
                 fontSize: settings.get_int('font-size'),
             });
@@ -72,27 +73,33 @@ export default class ZclockPreferences extends ExtensionPreferences {
         settings.bind('font-name', fontButton, 'font', Gio.SettingsBindFlags.DEFAULT);
         appearance.add(fontRow);
 
-        const colorRow = new Adw.ActionRow({title: 'Font color'});
-        const colorButton = new Gtk.ColorButton({
-            title: 'Choose font color',
-            valign: Gtk.Align.CENTER,
-            use_alpha: false,
-        });
-        colorRow.add_suffix(colorButton);
-        colorRow.activatable_widget = colorButton;
-        appearance.add(colorRow);
-        const syncColor = () => {
-            const color = new Gdk.RGBA();
-            const value = settings.get_string('font-color');
-            color.parse(/^#[0-9a-f]{6}$/i.test(value) ? value : '#ffffff');
-            colorButton.set_rgba(color);
-        };
-        syncColor();
-        colorButton.connect('color-set', () => {
-            const color = colorButton.get_rgba();
-            const hex = [color.red, color.green, color.blue]
-                .map(channel => Math.round(channel * 255).toString(16).padStart(2, '0')).join('');
-            settings.set_string('font-color', `#${hex}`);
+        const syncColors = [
+            ['font-color', 'Font color'],
+            ['stroke-color', 'Stroke color'],
+        ].map(([key, title]) => {
+            const colorRow = new Adw.ActionRow({title});
+            const colorButton = new Gtk.ColorButton({
+                title: `Choose ${title.toLowerCase()}`,
+                valign: Gtk.Align.CENTER,
+                use_alpha: false,
+            });
+            colorRow.add_suffix(colorButton);
+            colorRow.activatable_widget = colorButton;
+            appearance.add(colorRow);
+            const syncColor = () => {
+                const color = new Gdk.RGBA();
+                const value = settings.get_string(key);
+                color.parse(/^#[0-9a-f]{6}$/i.test(value) ? value : '#ffffff');
+                colorButton.set_rgba(color);
+            };
+            syncColor();
+            colorButton.connect('color-set', () => {
+                const color = colorButton.get_rgba();
+                const hex = [color.red, color.green, color.blue]
+                    .map(channel => Math.round(channel * 255).toString(16).padStart(2, '0')).join('');
+                settings.set_string(key, `#${hex}`);
+            });
+            return syncColor;
         });
         const boldRow = new Adw.SwitchRow({title: 'Bold text'});
         settings.bind('font-bold', boldRow, 'active', Gio.SettingsBindFlags.DEFAULT);
@@ -143,7 +150,8 @@ export default class ZclockPreferences extends ExtensionPreferences {
         // on the desktop. A one-second timeout here would preview jerky seconds
         // even though the desktop clock itself now moves smoothly.
         const changed = settings.connect('changed', () => {
-            syncColor();
+            for (const syncColor of syncColors)
+                syncColor();
             preview.queue_draw();
         });
         const tick = preview.add_tick_callback(() => {

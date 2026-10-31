@@ -86,6 +86,7 @@ export default class ZclockExtension extends Extension {
                         flip: settings.get_int('position-x') >= 50,
                         fontName: settings.get_string('font-name'),
                         fontColor: settings.get_string('font-color'),
+                        strokeColor: settings.get_string('stroke-color'),
                         fontBold: settings.get_boolean('font-bold'),
                         fontSize: settings.get_int('font-size'),
                     });

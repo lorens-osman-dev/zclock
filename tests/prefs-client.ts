@@ -61,7 +61,11 @@ app.connect('activate', async () => {
                 fontSize.value = 75;
                 if (settings.get_int('font-size') !== 75)
                     throw new Error('Font size binding did not update settings');
-                const colorButton = widgets.find(w => w instanceof Gtk.ColorButton)!;
+                const colorButtons = widgets.filter(w => w instanceof Gtk.ColorButton);
+                const colorButton = colorButtons.find(w => w.title === 'Choose font color')!;
+                const strokeButton = colorButtons.find(w => w.title === 'Choose stroke color');
+                if (!strokeButton)
+                    throw new Error('Stroke color picker is missing');
                 const color = new Gdk.RGBA();
                 color.parse('#ff8000');
                 colorButton.set_rgba(color);
@@ -72,6 +76,19 @@ app.connect('activate', async () => {
                 const selected = colorButton.get_rgba();
                 if (selected.red !== 0 || selected.blue !== 1)
                     throw new Error('External color change did not update picker');
+                color.parse('#00ff00');
+                strokeButton.set_rgba(color);
+                strokeButton.emit('color-set');
+                if (settings.get_string('stroke-color') !== '#00ff00' || settings.get_string('font-color') !== '#0080ff')
+                    throw new Error('Stroke picker must update stroke color independently of font color');
+                settings.set_string('stroke-color', '#ff0000');
+                const selectedStroke = strokeButton.get_rgba();
+                if (selectedStroke.red !== 1 || selectedStroke.green !== 0 || selectedStroke.blue !== 0)
+                    throw new Error('External stroke color change did not update picker');
+                settings.set_string('stroke-color', 'invalid');
+                if (strokeButton.get_rgba().red !== 1 || strokeButton.get_rgba().green !== 1 || strokeButton.get_rgba().blue !== 1)
+                    throw new Error('Invalid stroke colors must display the white fallback');
+                settings.set_string('stroke-color', '#00ff00');
                 settings.set_boolean('font-bold', false);
                 settings.set_int('font-size', 125);
                 if (bold.active || fontSize.value !== 125)
@@ -88,9 +105,12 @@ app.connect('activate', async () => {
                 reset.emit('clicked');
                 if (settings.get_int('height') !== settings.get_default_value('height')!.deep_unpack() || settings.get_boolean('use-24-hour') ||
                     settings.get_boolean('font-bold') || settings.get_int('font-size') !== 100 ||
-                    settings.get_string('font-color') !== '#ffffff' || colorButton.get_rgba().red !== 1)
+                    settings.get_string('font-color') !== '#ffffff' || colorButton.get_rgba().red !== 1 ||
+                    settings.get_string('stroke-color') !== '#ffffff' || strokeButton.get_rgba().red !== 1 ||
+                    strokeButton.get_rgba().green !== 1 || strokeButton.get_rgba().blue !== 1)
                     throw new Error('Reset button did not restore defaults');
                 print('PASS: real GTK4/libadwaita preferences render, all controls bind, reset restores defaults');
+                print('PASS: stroke color picker persists independently, follows external changes and resets');
             } catch (error) {
                 failure = error;
             } finally {

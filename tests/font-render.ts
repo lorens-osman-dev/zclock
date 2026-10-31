@@ -8,6 +8,11 @@ for (const [name, options] of Object.entries({
     small: {fontSize: 60},
     invalid: {fontColor: 'not-a-color'},
     flipped: {fontColor: '#ff0000', fontBold: true, fontSize: 60, flip: true},
+    stroke: {strokeColor: '#00ff00'},
+    'invalid-stroke': {strokeColor: 'not-a-color'},
+    'white-stroke': {strokeColor: '#ffffff'},
+    'flipped-stroke': {strokeColor: '#00ff00', flip: true},
+    combined: {fontColor: '#ff0000', strokeColor: '#00ff00'},
 })) {
     const surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, 640, 860);
     const cr = new Cairo.Context(surface);

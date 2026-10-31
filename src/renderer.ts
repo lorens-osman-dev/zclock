@@ -35,7 +35,7 @@ function text(cr: Cairo.Context, value: string, x: number, y: number, size: numb
 // continuously, but numbers remain upright because we move their centers
 // along the circle rather than rotating the entire Cairo coordinate system.
 // Add the flip parameter and pass it down to text()
-function ring(cr: Cairo.Context, current: number, radius: number, labelRadius: number, opacity: number, flip: boolean, fontName: string, style: TextStyle): void {
+function ring(cr: Cairo.Context, current: number, radius: number, labelRadius: number, opacity: number, flip: boolean, fontName: string, style: TextStyle, strokeColor: [number, number, number]): void {
     // A center just beyond the left edge gives the intentionally cropped,
     // off-center instrument-dial appearance from the reference.
     const cx = -3;
@@ -49,7 +49,7 @@ function ring(cr: Cairo.Context, current: number, radius: number, labelRadius: n
         // down gently, while keeping marks on the visible right side brighter.
         const fade = Math.max(0.05, Math.min(1, (cosine + 0.2) / 0.9));
         const length = major ? 26 : 14;
-        cr.setSourceRGBA(1, 1, 1, opacity * 0.47 * fade);
+        cr.setSourceRGBA(...strokeColor, opacity * 0.47 * fade);
         cr.setLineWidth(major ? 1.6 : 1.3);
         // A tick is a short radial segment: its endpoints share an angle,
         // but have slightly different distances from the center.
@@ -79,9 +79,12 @@ function capsule(cr: Cairo.Context, x: number, y: number, width: number, height:
 // Add the flip option, apply the mirror transform, and pass it to elements
 export function drawClock(cr: Cairo.Context, width: number, height: number, date: Date, options: ClockOptions = {}): void {
     const {use24Hour = false, showSeconds = true, opacity = 1, flip = false,
-        fontName = 'Sans', fontColor = '#ffffff', fontBold = false, fontSize = 100} = options;
+        fontName = 'Sans', fontColor = '#ffffff', fontBold = false, fontSize = 100,
+        strokeColor = '#ffffff'} = options;
     // The picker stores #RRGGBB. Invalid externally supplied colors stay legible.
     const color = /^#[0-9a-f]{6}$/i.test(fontColor) ? fontColor : '#ffffff';
+    const stroke = /^#[0-9a-f]{6}$/i.test(strokeColor) ? strokeColor : '#ffffff';
+    const strokeRgb = [1, 3, 5].map(offset => parseInt(stroke.slice(offset, offset + 2), 16) / 255) as [number, number, number];
     const style: TextStyle = {
         color: [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16) / 255) as [number, number, number],
         bold: fontBold,
@@ -103,20 +106,20 @@ export function drawClock(cr: Cairo.Context, width: number, height: number, date
 
     // Draw the seconds dial globally so it is visible underneath the capsule.
     if (showSeconds)
-        ring(cr, state.secondValue, 352, 308, opacity, flip, fontName, style);
+        ring(cr, state.secondValue, 352, 308, opacity, flip, fontName, style, strokeRgb);
 
     cr.save();
     cr.rectangle(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
     capsule(cr, 175, 385, 190, 90);
     cr.setFillRule(Cairo.FillRule.EVEN_ODD);
     cr.clip();
-    ring(cr, state.minuteValue, 270, 226, opacity, flip, fontName, style);
+    ring(cr, state.minuteValue, 270, 226, opacity, flip, fontName, style, strokeRgb);
     cr.restore();
 
     // Only stroke the outline: there is deliberately NO fill/color behind
     // the minute element. Its interior is fully transparent except the digits.
     capsule(cr, 175, 385, 190, 90);
-    cr.setSourceRGBA(1, 1, 1, 0.10 * opacity);
+    cr.setSourceRGBA(...strokeRgb, 0.10 * opacity);
     cr.setLineWidth(1.8);
     cr.stroke();
       // Draw the digital readout last, above the dials and capsule outline.
@@ -131,6 +134,7 @@ export interface ClockOptions {
     flip?: boolean;
     fontName?: string;
     fontColor?: string;
+    strokeColor?: string;
     fontBold?: boolean;
     fontSize?: number;
 }
