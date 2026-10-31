@@ -9,6 +9,10 @@ export default defineConfig(({mode}) => {
     return {
         envDir: false,
         publicDir: false,
+        define: {
+            'import.meta.env.DEV': JSON.stringify(development),
+            'import.meta.env.PROD': JSON.stringify(!development),
+        },
         plugins: [{
             name: 'gnome-extension-assets',
             generateBundle() {
@@ -26,7 +30,7 @@ export default defineConfig(({mode}) => {
         build: {
             target: 'es2023',
             modulePreload: false,
-            outDir: 'dist',
+            outDir: development ? 'dist-dev' : 'dist',
             emptyOutDir: true,
             minify: development ? false : 'terser',
             terserOptions: {
@@ -39,7 +43,6 @@ export default defineConfig(({mode}) => {
                 input: {
                     extension: resolve(root, 'extension.ts'),
                     prefs: resolve(root, 'prefs.ts'),
-                    ...(development ? {'src/logger': resolve(root, 'src/logger.ts')} : {}),
                 },
                 preserveEntrySignatures: 'strict',
                 external: id => id.startsWith('gi://') || id.startsWith('resource:///') || id === 'cairo',

@@ -6,11 +6,11 @@ import Gtk from 'gi://Gtk';
 
 Gio.resources_register(Gio.Resource.load('/usr/share/gnome-shell/org.gnome.Shell.Extensions.src.gresource'));
 const root = GLib.getenv('GCLOCK_SOURCE');
-const {default: Preferences} = await import(`file://${root}/dist/prefs.js`) as typeof import('../prefs.js');
+const staged = `${GLib.getenv('XDG_DATA_HOME')}/gnome-shell/extensions/zclock@lorens`;
+const {default: Preferences} = await import(`file://${staged}/prefs.js`) as typeof import('../prefs.js');
 const [, bytes] = GLib.file_get_contents(`${root}/metadata.json`);
 const metadata = JSON.parse(new TextDecoder().decode(bytes)) as
     ConstructorParameters<typeof Preferences>[0] & {dir: Gio.File; path: string};
-const staged = `${GLib.getenv('XDG_DATA_HOME')}/gnome-shell/extensions/zclock@lorens`;
 metadata.dir = Gio.File.new_for_path(staged);
 metadata.path = staged;
 let failure: unknown = null;

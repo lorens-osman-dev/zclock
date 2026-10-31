@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "../dist-tools",
+    "noEmit": false,
     "types": ["node"]
   },
   "include": ["./*.ts"]

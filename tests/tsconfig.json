@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": "..",
     "outDir": "../dist-tests",
+    "noEmit": false,
     "types": ["node"]
   },
   "include": ["../ambient.d.ts", "./*.ts"]

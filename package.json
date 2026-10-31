@@ -14,7 +14,7 @@
     "shell-smoke": "bash scripts/shell-smoke.sh",
     "install:extension": "bash scripts/install.sh",
     "uninstall": "bash scripts/uninstall.sh",
-    "dev": "npm run uninstall && npm run install:extension -- --mode development && bash scripts/dev.sh"
+    "dev": "npm run build:dev && bash scripts/dev.sh"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

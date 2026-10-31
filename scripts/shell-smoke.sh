@@ -2,7 +2,13 @@
 # Runs a second, headless compositor. Does NOT install into the user's profile.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-npm run build
+mode="${1:-production}"
+case "$mode" in
+    production) source=dist ;;
+    development) source=dist-dev ;;
+    *) printf 'Usage: %s [production|development]\n' "$0" >&2; exit 2 ;;
+esac
+npm run build -- --mode "$mode"
 npm run build:tests
 export TMPDIR="${TMPDIR:-$(node -p 'require("node:os").tmpdir()')}"
 ROOT="$(mktemp -d "$TMPDIR/zclock-shell.XXXXXX")"
@@ -12,7 +18,7 @@ export XDG_CONFIG_HOME="$ROOT/config"
 export XDG_DATA_HOME="$ROOT/data"
 export XDG_CACHE_HOME="$ROOT/cache"
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_DATA_HOME/gnome-shell/extensions/zclock@lorens"
-cp -r dist/. "$XDG_DATA_HOME/gnome-shell/extensions/zclock@lorens/"
+cp -r "$source/." "$XDG_DATA_HOME/gnome-shell/extensions/zclock@lorens/"
 glib-compile-schemas --strict "$XDG_DATA_HOME/gnome-shell/extensions/zclock@lorens/schemas"
 # The test-only companion allows introspection on this private D-Bus only.
 DRIVER="$XDG_DATA_HOME/gnome-shell/extensions/zclock-test@local"
@@ -30,4 +36,5 @@ dbus-run-session -- bash -euc '
     WAYLAND_DISPLAY=zclock-test GI_TYPELIB_PATH=/usr/lib/gnome-shell/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH} G_DEBUG=fatal-criticals timeout 30s gjs -m "$GCLOCK_SOURCE/dist-tests/tests/prefs-client.js" >"$GCLOCK_TEST_ROOT/prefs.log" 2>&1 || { cat "$GCLOCK_TEST_ROOT/prefs.log"; exit 1; }
     cat "$GCLOCK_TEST_ROOT/prefs.log"
 '
+node dist-tests/tests/check-lifecycle.js "$ROOT/shell.log" "$mode"
 printf 'Shell smoke-test artifacts: %s\n' "$ROOT"

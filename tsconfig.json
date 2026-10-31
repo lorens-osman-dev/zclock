@@ -8,6 +8,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmitOnError": true,
+    "noEmit": true,
     "removeComments": true,
     "target": "ES2023",
     "lib": [

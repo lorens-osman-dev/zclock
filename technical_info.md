@@ -53,18 +53,26 @@ step because GNOME Shell runs JavaScript, not TypeScript. Local imports retain
 their `.js` suffix so the emitted modules load correctly in GJS.
 `vite.config.ts` owns the extension build. `npm run build` runs Vite in production
 mode, following the imports from `extension.ts` and `prefs.ts` rather than
-compiling every source file. The unused logger is therefore absent. GNOME
+compiling every source file. `enable()` and `disable()` call `Logger.info()`
+behind `import.meta.env.DEV` guards. Vite replaces those guards at build time,
+so production contains neither the calls nor the logger module. GNOME
 `gi://`, `resource:///` and `cairo` imports remain external, with ES-module paths
 preserved. Production output is formatted for review without name mangling or
 code compression, and JavaScript/XML comments are removed. TypeScript source
 comments are retained. A small Vite asset hook stages metadata, schema XML,
-README and license alongside the generated JavaScript in `dist/`.
+license alongside the generated JavaScript in `dist/`.
 
-`npm run build:dev` uses Vite's `development` mode and adds `src/logger.ts` as a
-development-only entry. Both modes clean and rebuild the same `dist/` directory;
-there are no separate development TypeScript compiler configurations.
+`npm run build:dev` uses Vite's `development` mode and writes to `dist-dev/`,
+including the logger actually imported by the lifecycle methods. Production
+continues to use `dist/`. One Vite configuration handles both modes, and neither
+development builds nor the development session overwrite the reviewer ZIP.
+The `DEV`/`PROD` constants are explicitly tied to the Vite mode, because
+`vite build --mode development` alone still defaults to production `NODE_ENV`.
 Type checking remains a separate `npm run typecheck` step because Vite transforms
-TypeScript without checking its types. Tests compile separately into
+TypeScript without checking its types. The root TypeScript configuration uses
+`noEmit` so a plain `tsc` invocation cannot overwrite Vite output. Tests and Node
+tools explicitly enable emission into their own output directories.
+Tests compile separately into
 `dist-tests/`; neither tests, TypeScript sources nor npm dependencies ship in
 the extension ZIP. Node packaging tools compile separately into `dist-tools/`.
 `node_modules/` is ignored; the repository retains its existing policy for
@@ -79,23 +87,26 @@ npm run typecheck              # strict runtime and test type checking
 npm test                       # build, model/font tests and build/comment checks
 npm run check                  # type checks, tests, syntax, schema, and Cairo pixels
 npm run shell-smoke            # isolated headless GNOME Shell + GTK preferences
+npm run shell-smoke -- development # also verify actual enable/disable logger output
 npm run pack                   # create and validate installable ZIP in distZip/
 npm run install:extension      # build and install the extension locally
 npm run uninstall              # remove the locally installed extension
-npm run dev                    # uninstall, reinstall, and start the dev workflow
+npm run dev                    # build dist-dev/ and launch an isolated nested Shell
 ```
 
-`npm run dev` forwards `--mode development` through packaging and installation,
-then runs `scripts/dev.sh` for the nested Shell session. These
+`npm run dev` builds `dist-dev/` and stages that extension with compiled schemas
+inside temporary data/config/cache directories for the nested Shell session.
+It does not uninstall or replace the live extension, write `dist/`, or create a
+development ZIP at the reviewer archive path. Temporary session files are
+cleaned up when the nested session exits. These
 commands are defined in `package.json`. Installation uses `install:extension`
 rather than npm's `install` lifecycle hook, so `npm install` and `npm ci` never
 install or replace the extension in your running desktop session.
 
 Before submitting to the reviewer, run `npm run pack`. This always rebuilds in
-production mode unless explicitly given another mode. Submit
+production mode; development flags are rejected. Submit
 `distZip/zclock@lorens.shell-extension.zip`; production validation rejects the
-development logger. Development and production share the output and ZIP paths,
-so rebuild the production ZIP after using the development workflow.
+development logger. Dev output is isolated in the ignored `dist-dev/` directory.
 
 The smoke test starts a **separate compositor and private session bus** with its
 own data, config and cache directories under `$TMPDIR`. It verifies loading,
