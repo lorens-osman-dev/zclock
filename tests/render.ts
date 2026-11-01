@@ -1,6 +1,6 @@
 import GLib from 'gi://GLib';
 import Cairo from 'cairo';
-import {drawClock} from '../src/renderer.js';
+import {drawClock} from '../src/utils/renderer.js';
 
 // These are deterministic render fixtures, NOT screenshots of the live clock.
 // The same renderer is used by Shell, so inspecting pixels tests real artwork.

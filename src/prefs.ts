@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import Gdk from 'gi://Gdk';
 import Gtk from 'gi://Gtk';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {drawClock} from './src/renderer.js';
+import {drawClock} from './utils/renderer.js';
 
 // Preferences run in a separate GTK process, NOT inside GNOME Shell. Sharing
 // only the renderer/model lets us preview the clock without importing Shell's

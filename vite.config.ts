@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 export default defineConfig(({mode}) => {
     const development = mode === 'development';
     const root = import.meta.dirname;
+    const sourceRoot = resolve(root, 'src');
 
     return {
         envDir: false,
@@ -17,10 +18,10 @@ export default defineConfig(({mode}) => {
             name: 'gnome-extension-assets',
             generateBundle() {
                 const files = ['metadata.json', 'LICENSE',
-                    ...readdirSync(resolve(root, 'schemas'))
+                    ...readdirSync(resolve(sourceRoot, 'schemas'))
                         .filter(name => name.endsWith('.gschema.xml')).map(name => `schemas/${name}`)];
                 for (const fileName of files) {
-                    let source = readFileSync(resolve(root, fileName), 'utf8');
+                    let source = readFileSync(resolve(sourceRoot, fileName), 'utf8');
                     if (!development && fileName.endsWith('.xml'))
                         source = source.replace(/<!--[\s\S]*?-->/g, '').replace(/^[\t ]+$/gm, '');
                     this.emitFile({type: 'asset', fileName, source});
@@ -41,15 +42,15 @@ export default defineConfig(({mode}) => {
             sourcemap: false,
             rolldownOptions: {
                 input: {
-                    extension: resolve(root, 'extension.ts'),
-                    prefs: resolve(root, 'prefs.ts'),
+                    extension: resolve(sourceRoot, 'extension.ts'),
+                    prefs: resolve(sourceRoot, 'prefs.ts'),
                 },
                 preserveEntrySignatures: 'strict',
                 external: id => id.startsWith('gi://') || id.startsWith('resource:///') || id === 'cairo',
                 output: {
                     format: 'es',
                     preserveModules: true,
-                    preserveModulesRoot: root,
+                    preserveModulesRoot: sourceRoot,
                     entryFileNames: '[name].js',
                     comments: development,
                 },

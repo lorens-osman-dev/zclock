@@ -1,5 +1,5 @@
 import Cairo from 'cairo';
-import {drawClock} from '../src/renderer.js';
+import {drawClock} from '../src/utils/renderer.js';
 
 for (const [name, options] of Object.entries({
     normal: {},

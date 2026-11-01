@@ -1,5 +1,5 @@
 
-schemas/gschemas.compiled
+src/schemas/gschemas.compiled
 __pycache__/
 *.pyc
 core

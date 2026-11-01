@@ -1,6 +1,6 @@
-import { widgetBounds } from "./src/model.js";
+import { widgetBounds } from "./utils/model.js";
 
-import { drawClock } from "./src/renderer.js";
+import { drawClock } from "./utils/renderer.js";
 
 import Clutter from "gi://Clutter";
 

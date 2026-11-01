@@ -18,8 +18,6 @@
   },
   "include": [
     "ambient.d.ts",
-    "extension.ts",
-    "prefs.ts",
     "src/**/*.ts"
   ]
 }

@@ -3,21 +3,38 @@
 ## Compatibility and architecture
 
 Only GNOME Shell 50 is currently declared supported and integration-tested.
-Shell's private background-group API is deliberately confined to `extension.ts`.
+Shell's private background-group API is deliberately confined to `src/extension.ts`.
 No drag gestures are installed: the widget never intercepts desktop input.
 
-- `extension.ts` — Shell actor, placement, visibility and lifecycle.
-- `src/model.ts` — pure local-time and monitor geometry.
-- `src/renderer.ts` — shared Cairo/Pango drawing.
-- `prefs.ts` — libadwaita settings window.
-- `schemas/` — settings schema.
+- `src/extension.ts` — Shell actor, placement, visibility and lifecycle.
+- `src/utils/model.ts` — pure local-time and monitor geometry.
+- `src/utils/logger.ts` — development-only lifecycle logging.
+- `src/utils/renderer.ts` — shared Cairo/Pango drawing.
+- `src/prefs.ts` — libadwaita settings window.
+- `src/schemas/` — settings schema.
 - `tests/` and `scripts/` — tests, packaging and installation.
+
+The extension's source and distributable assets live together:
+
+```text
+src/
+├── schemas/
+│   └── org.gnome.shell.extensions.zclock.gschema.xml
+├── utils/
+│   ├── model.ts
+│   ├── logger.ts
+│   └── renderer.ts
+├── extension.ts
+├── LICENSE
+├── metadata.json
+└── prefs.ts
+```
 
 ## Animation and transparency
 
 The source includes explanatory comments about the mathematics, drawing steps,
-settings bindings, and resource ownership. Start with `src/model.ts`, then
-`src/renderer.ts`, and finally `extension.ts` to follow data from time to pixels.
+settings bindings, and resource ownership. Start with `src/utils/model.ts`, then
+`src/utils/renderer.ts`, and finally `src/extension.ts` to follow data from time to pixels.
 
 1. **Fractional local time:** `clockState()` adds milliseconds to seconds and
    carries that fraction into minutes. Digital labels still change only at the
@@ -52,7 +69,7 @@ ES modules, strict checking, `ambient.d.ts` for GI/resource imports, and a build
 step because GNOME Shell runs JavaScript, not TypeScript. Local imports retain
 their `.js` suffix so the emitted modules load correctly in GJS.
 `vite.config.ts` owns the extension build. `npm run build` runs Vite in production
-mode, following the imports from `extension.ts` and `prefs.ts` rather than
+mode, following the imports from `src/extension.ts` and `src/prefs.ts` rather than
 compiling every source file. `enable()` and `disable()` call `Logger.info()`
 behind `import.meta.env.DEV` guards. Vite replaces those guards at build time,
 so production contains neither the calls nor the logger module. GNOME
@@ -92,7 +109,7 @@ dissts/
 ```sh
 npm ci                         # install locked development dependencies
 npm run build                  # compile runtime modules and stage dissts/dist/
-npm run build:dev              # Vite development build, including src/logger.js
+npm run build:dev              # Vite development build, including utils/logger.js
 npm run build:tools            # compile Node.js ZIP validation tooling
 npm run typecheck              # strict runtime and test type checking
 npm test                       # build, model/font tests and build/comment checks

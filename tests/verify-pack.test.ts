@@ -8,7 +8,7 @@ import {verifyPack} from '../scripts/verify-pack.js';
 
 function bundle(): AdmZip {
     const zip = new AdmZip();
-    for (const name of ['extension.js', 'prefs.js', 'src/model.js', 'src/renderer.js',
+    for (const name of ['extension.js', 'prefs.js', 'utils/model.js', 'utils/renderer.js',
         'schemas/org.gnome.shell.extensions.zclock.gschema.xml', 'LICENSE'])
         zip.addFile(name, Buffer.from('fixture content'));
     zip.addFile('metadata.json', Buffer.from(JSON.stringify({uuid: 'zclock@lorens'})));
@@ -33,7 +33,7 @@ test('ZIP validation accepts an intact runtime-only extension bundle', () => {
 
 test('ZIP validation rejects missing runtime modules and incorrect UUIDs', () => {
     withArchive((path, zip) => {
-        zip.deleteFile('src/renderer.js');
+        zip.deleteFile('utils/renderer.js');
         zip.writeZip(path);
         assert.throws(() => verifyPack(path), /Missing bundle files/);
     });
@@ -56,7 +56,7 @@ test('ZIP validation rejects test code, TypeScript, source maps and npm dependen
 
 test('production ZIP rejects the development-only logger', () => {
     withArchive((path, zip) => {
-        zip.addFile('src/logger.js', Buffer.from('export const Logger = {};'));
+        zip.addFile('utils/logger.js', Buffer.from('export const Logger = {};'));
         zip.writeZip(path);
         assert.throws(() => verifyPack(path), /logger must not ship/);
     });
@@ -64,7 +64,7 @@ test('production ZIP rejects the development-only logger', () => {
 
 test('development ZIP permits the logger but still rejects test-only code', () => {
     withArchive((path, zip) => {
-        zip.addFile('src/logger.js', Buffer.from('export const Logger = {};'));
+        zip.addFile('utils/logger.js', Buffer.from('export const Logger = {};'));
         zip.writeZip(path);
         assert.doesNotThrow(() => verifyPack(path, 'development'));
         zip.addFile('tests/driver.js', Buffer.from('test code'));

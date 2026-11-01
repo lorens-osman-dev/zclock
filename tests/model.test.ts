@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {clockState, dialAngle, widgetBounds} from '../src/model.js';
+import {clockState, dialAngle, widgetBounds} from '../src/utils/model.js';
 
 test('clock reads local time and maps midnight to twelve', () => {
     const state = clockState(new Date(2026, 0, 1, 0, 7, 30), false);

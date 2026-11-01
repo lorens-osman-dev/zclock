@@ -1,4 +1,4 @@
-import { drawClock } from "./src/renderer.js";
+import { drawClock } from "./utils/renderer.js";
 
 import Adw from "gi://Adw";
 

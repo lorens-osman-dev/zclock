@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync, existsSync} from 'node:fs';
+import {readFileSync, existsSync, readdirSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import ts from 'typescript';
 
-const modules = ['extension', 'prefs', 'src/model', 'src/renderer'];
+const modules = ['extension', 'prefs', 'utils/model', 'utils/renderer'];
 
 function comments(source: string): string[] {
     const scanner = ts.createScanner(ts.ScriptTarget.ES2023, false, ts.LanguageVariant.Standard, source);
@@ -29,14 +29,22 @@ function build(script: string): void {
     assert.equal(result.status, 0, result.stdout + result.stderr);
 }
 
+test('extension source tree is contained in src with schemas and utilities', () => {
+    assert.deepEqual(readdirSync('src').sort(), ['LICENSE', 'extension.ts', 'metadata.json', 'prefs.ts', 'schemas', 'utils'].sort());
+    assert.deepEqual(readdirSync('src/utils').sort(), ['model.ts', 'logger.ts', 'renderer.ts'].sort());
+    assert.deepEqual(readdirSync('src/schemas'), ['org.gnome.shell.extensions.zclock.gschema.xml']);
+    for (const old of ['extension.ts', 'prefs.ts', 'metadata.json', 'LICENSE', 'schemas'])
+        assert.ok(!existsSync(old), `Remove the old source location: ${old}`);
+});
+
 test('Vite production build emits readable GJS modules without comments or the unused logger', () => {
     const {scripts} = JSON.parse(readFileSync('package.json', 'utf8'));
     assert.equal(scripts.build, 'vite build');
     build('build');
     assert.ok(existsSync('dissts/dist/extension.js'), 'Production output must live under dissts/');
     for (const name of modules) {
-        assert.ok(!existsSync(`${name}.js`), `Only TypeScript should be maintained: ${name}`);
-        const source = readFileSync(`${name}.ts`, 'utf8');
+        assert.ok(!existsSync(`src/${name}.js`), `Only TypeScript should be maintained: ${name}`);
+        const source = readFileSync(`src/${name}.ts`, 'utf8');
         const emitted = readFileSync(`dissts/dist/${name}.js`, 'utf8');
         assert.deepEqual(comments(emitted), [], `Production comments must be removed: ${name}`);
         assert.deepEqual(externalImports(emitted), externalImports(source), `GJS import paths must be preserved: ${name}`);
@@ -46,12 +54,12 @@ test('Vite production build emits readable GJS modules without comments or the u
     }
     assert.match(readFileSync('dissts/dist/extension.js', 'utf8'), /ZclockExtension/);
     assert.match(readFileSync('dissts/dist/prefs.js', 'utf8'), /ZclockPreferences/);
-    assert.equal(readFileSync('dissts/dist/metadata.json', 'utf8'), readFileSync('metadata.json', 'utf8'));
+    assert.equal(readFileSync('dissts/dist/metadata.json', 'utf8'), readFileSync('src/metadata.json', 'utf8'));
     assert.ok(existsSync('dissts/dist/LICENSE'));
     // assert.ok(existsSync('dissts/dist/README.md'));
     assert.doesNotMatch(readFileSync('dissts/dist/schemas/org.gnome.shell.extensions.zclock.gschema.xml', 'utf8'), /<!--/);
     assert.ok(!existsSync('dissts/dist/tests'), 'Test-only code must stay outside the extension build');
-    assert.ok(!existsSync('dissts/dist/src/logger.js'), 'The unused logger must not ship');
+    assert.ok(!existsSync('dissts/dist/utils/logger.js'), 'The unused logger must not ship');
 });
 
 test('Vite development logs lifecycle events without changing production output or the reviewer ZIP', () => {
@@ -60,7 +68,7 @@ test('Vite development logs lifecycle events without changing production output 
     const production = readFileSync('dissts/dist/extension.js');
     const archive = readFileSync('dissts/dist-zip/zclock@lorens.shell-extension.zip');
     build('build:dev');
-    const logger = readFileSync('dissts/dist-dev/src/logger.js', 'utf8');
+    const logger = readFileSync('dissts/dist-dev/utils/logger.js', 'utf8');
     const extension = readFileSync('dissts/dist-dev/extension.js', 'utf8');
     assert.match(logger, /Logger/);
     assert.match(logger, /zclock/);
@@ -70,7 +78,7 @@ test('Vite development logs lifecycle events without changing production output 
     assert.match(readFileSync('dissts/dist-dev/schemas/org.gnome.shell.extensions.zclock.gschema.xml', 'utf8'), /<!--/);
     assert.deepEqual(readFileSync('dissts/dist/extension.js'), production, 'Development must not overwrite dissts/dist/');
     assert.deepEqual(readFileSync('dissts/dist-zip/zclock@lorens.shell-extension.zip'), archive, 'Development must not overwrite the reviewer ZIP');
-    assert.ok(!existsSync('dissts/dist/src/logger.js'));
+    assert.ok(!existsSync('dissts/dist/utils/logger.js'));
     const {scripts} = JSON.parse(readFileSync('package.json', 'utf8'));
     assert.equal(scripts.dev, 'npm run build:dev && bash scripts/dev.sh');
     const rejected = spawnSync('npm', ['run', 'pack', '--', '--mode', 'development'], {encoding: 'utf8'});
@@ -83,5 +91,5 @@ test('plain TypeScript checking cannot emit a logger into production output', ()
     const checked = spawnSync('npx', ['--no-install', 'tsc', '-p', 'tsconfig.json'], {encoding: 'utf8'});
     assert.equal(checked.status, 0, checked.stdout + checked.stderr);
     assert.deepEqual(readFileSync('dissts/dist/extension.js'), production);
-    assert.ok(!existsSync('dissts/dist/src/logger.js'), 'Only Vite may write the production build');
+    assert.ok(!existsSync('dissts/dist/utils/logger.js'), 'Only Vite may write the production build');
 });

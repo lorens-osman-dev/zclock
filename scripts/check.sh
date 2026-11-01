@@ -3,9 +3,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 # Pure math first; Node checks syntax but cannot execute GNOME GI imports.
 npm test
-for file in dissts/dist/extension.js dissts/dist/prefs.js dissts/dist/src/*.js; do node --check "$file"; done
+for file in dissts/dist/extension.js dissts/dist/prefs.js dissts/dist/utils/*.js; do node --check "$file"; done
 # Validate the schema without writing compiled files into the source tree.
-glib-compile-schemas --strict --dry-run schemas
+glib-compile-schemas --strict --dry-run src/schemas
 # Use the real GJS/Pango/Cairo renderer, then inspect its actual RGBA pixels.
 gjs -m dissts/dist-tests/tests/render.js
 node dissts/dist-tests/tests/check-render.js

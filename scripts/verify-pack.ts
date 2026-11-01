@@ -9,9 +9,9 @@ export function verifyPack(path: string, mode: 'production' | 'development' = 'p
     const bundle = new AdmZip(path);
     const names = new Set(bundle.getEntries().map(entry => entry.entryName));
     if (mode !== 'development')
-        assert.ok(!names.has('src/logger.js'), 'Development logger must not ship in a production ZIP');
-    const required = ['extension.js', 'prefs.js', 'metadata.json', 'src/model.js',
-        'src/renderer.js', 'schemas/org.gnome.shell.extensions.zclock.gschema.xml',
+        assert.ok(![...names].some(name => /(^|\/)logger\.js$/.test(name)), 'Development logger must not ship in a production ZIP');
+    const required = ['extension.js', 'prefs.js', 'metadata.json', 'utils/model.js',
+        'utils/renderer.js', 'schemas/org.gnome.shell.extensions.zclock.gschema.xml',
         'LICENSE'];
     const missing = required.filter(name => !names.has(name));
     assert.equal(missing.length, 0, `Missing bundle files: ${missing.join(', ')}`);
