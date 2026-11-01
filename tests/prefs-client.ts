@@ -111,6 +111,26 @@ app.connect('activate', async () => {
                     throw new Error('Reset button did not restore defaults');
                 print('PASS: real GTK4/libadwaita preferences render, all controls bind, reset restores defaults');
                 print('PASS: stroke color picker persists independently, follows external changes and resets');
+                const about = widgets.find(w => w instanceof Adw.PreferencesPage && w.title === 'About');
+                if (!(about instanceof Adw.PreferencesPage))
+                    throw new Error('About preferences page is missing');
+                const aboutWidgets: Gtk.Widget[] = [];
+                const visitAbout = (widget: Gtk.Widget): void => {
+                    aboutWidgets.push(widget);
+                    for (let child = widget.get_first_child(); child; child = child.get_next_sibling())
+                        visitAbout(child);
+                };
+                visitAbout(about);
+                const logo = aboutWidgets.find(w => w instanceof Gtk.Picture);
+                if (!(logo instanceof Gtk.Picture) || logo.get_file()?.get_path() !== `${staged}/assets/Z-CLOCK-LOGO.png` ||
+                    !logo.get_paintable() || logo.get_paintable()!.get_intrinsic_width() <= 0)
+                    throw new Error('About page must load the packaged Z-CLOCK logo');
+                if (!aboutWidgets.some(w => w instanceof Adw.ActionRow && w.title === 'Author' && w.subtitle === 'lorens osman'))
+                    throw new Error('About page author is missing');
+                if (!aboutWidgets.some(w => w instanceof Gtk.LinkButton && w.uri === 'https://github.com/lorens-osman-dev/zclock'))
+                    throw new Error('About page GitHub link is missing');
+                window.set_visible_page(about);
+                print('PASS: About page displays the packaged logo, author and GitHub link');
             } catch (error) {
                 failure = error;
             } finally {

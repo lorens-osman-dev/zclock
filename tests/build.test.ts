@@ -80,7 +80,7 @@ test('Vite development logs lifecycle events without changing production output 
     assert.deepEqual(readFileSync('dissts/dist-zip/zclock@lorens.shell-extension.zip'), archive, 'Development must not overwrite the reviewer ZIP');
     assert.ok(!existsSync('dissts/dist/utils/logger.js'));
     const {scripts} = JSON.parse(readFileSync('package.json', 'utf8'));
-    assert.equal(scripts.dev, 'npm run build:dev && bash scripts/dev.sh');
+    assert.equal(scripts.dev, 'npm run uninstall && npm run build:dev && bash scripts/dev.sh');
     const rejected = spawnSync('npm', ['run', 'pack', '--', '--mode', 'development'], {encoding: 'utf8'});
     assert.notEqual(rejected.status, 0, 'Reviewer packaging must not accept development mode');
     assert.deepEqual(readFileSync('dissts/dist-zip/zclock@lorens.shell-extension.zip'), archive);

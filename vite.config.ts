@@ -17,6 +17,11 @@ export default defineConfig(({mode}) => {
         plugins: [{
             name: 'gnome-extension-assets',
             generateBundle() {
+                this.emitFile({
+                    type: 'asset',
+                    fileName: 'assets/Z-CLOCK-LOGO.png',
+                    source: readFileSync(resolve(root, 'assets/Z-CLOCK-LOGO.png')),
+                });
                 const files = ['metadata.json', 'LICENSE',
                     ...readdirSync(resolve(sourceRoot, 'schemas'))
                         .filter(name => name.endsWith('.gschema.xml')).map(name => `schemas/${name}`)];

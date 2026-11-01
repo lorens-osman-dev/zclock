@@ -145,6 +145,54 @@ export default class ZclockPreferences extends ExtensionPreferences {
         });
         placement.add(reset);
 
+        const about = new Adw.PreferencesPage({title: 'About', icon_name: 'help-about-symbolic'});
+        const identity = new Adw.PreferencesGroup();
+        const logo = new Gtk.Image({
+            file: `${this.path}/assets/Z-CLOCK-LOGO.png`,
+             pixel_size: 250,
+            halign: Gtk.Align.CENTER,
+ 
+        });
+        identity.add(logo);
+        const name = new Gtk.Label({label: 'Zclock', margin_top: 12, margin_bottom: 12});
+        name.add_css_class('title-1');
+        identity.add(name);
+        about.add(identity);
+
+        const information = new Adw.PreferencesGroup();
+
+        // Author Row
+        const authorRow = new Adw.ActionRow({
+            title: "Author",
+            subtitle: "Lorens Osman",
+        });
+        information.add(authorRow);
+
+        // Email Row
+        const emailRow = new Adw.ActionRow({
+            title: "Email",
+            subtitle: "lorens.osman.dev@gmail.com",
+            activatable: true,
+        });
+        emailRow.connect("activated", () => {
+        Gtk.show_uri(window, "mailto:lorens.osman.dev@gmail.com", 0);
+        });
+        information.add(emailRow);
+
+        // Github Row
+        const githubRow = new Adw.ActionRow({
+            title: "Github",
+            subtitle: "https://github.com/lorens-osman-dev",
+            activatable: true,
+        });
+        githubRow.connect("activated", () => {
+                 Gtk.show_uri(window, "https://github.com/lorens-osman-dev", 0);
+        });
+        information.add(githubRow);
+
+        about.add(information);
+        window.add(about);
+
         // Repaint immediately when any setting changes. For animation, use
         // GTK's frame clock, the GTK counterpart of the Clutter timeline used
         // on the desktop. A one-second timeout here would preview jerky seconds

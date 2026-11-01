@@ -129,6 +129,51 @@ var ZclockPreferences = class extends ExtensionPreferences {
             for (const key of settings.settings_schema.list_keys()) settings.reset(key);
         });
         placement.add(reset);
+        const about = new Adw.PreferencesPage({
+            title: "About",
+            icon_name: "help-about-symbolic"
+        });
+        const identity = new Adw.PreferencesGroup;
+        const logo = new Gtk.Image({
+            file: `${this.path}/assets/Z-CLOCK-LOGO.png`,
+            pixel_size: 250,
+            halign: Gtk.Align.CENTER
+        });
+        identity.add(logo);
+        const name = new Gtk.Label({
+            label: "Zclock",
+            margin_top: 12,
+            margin_bottom: 12
+        });
+        name.add_css_class("title-1");
+        identity.add(name);
+        about.add(identity);
+        const information = new Adw.PreferencesGroup;
+        const authorRow = new Adw.ActionRow({
+            title: "Author",
+            subtitle: "Lorens Osman"
+        });
+        information.add(authorRow);
+        const emailRow = new Adw.ActionRow({
+            title: "Email",
+            subtitle: "lorens.osman.dev@gmail.com",
+            activatable: true
+        });
+        emailRow.connect("activated", () => {
+            Gtk.show_uri(window, "mailto:lorens.osman.dev@gmail.com", 0);
+        });
+        information.add(emailRow);
+        const githubRow = new Adw.ActionRow({
+            title: "Github",
+            subtitle: "https://github.com/lorens-osman-dev",
+            activatable: true
+        });
+        githubRow.connect("activated", () => {
+            Gtk.show_uri(window, "https://github.com/lorens-osman-dev", 0);
+        });
+        information.add(githubRow);
+        about.add(information);
+        window.add(about);
         const changed = settings.connect("changed", () => {
             for (const syncColor of syncColors) syncColor();
             preview.queue_draw();
